@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "f43c1e6e-2b21-4bca-bce6-3a043a75081e",
+  "path": "bank-upgrade",
+  "path_key": "bank-upgrade",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
