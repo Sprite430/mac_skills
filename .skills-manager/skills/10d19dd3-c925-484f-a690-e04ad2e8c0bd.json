@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "10d19dd3-c925-484f-a690-e04ad2e8c0bd",
+  "path": "oracle-db-handler",
+  "path_key": "oracle-db-handler",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}

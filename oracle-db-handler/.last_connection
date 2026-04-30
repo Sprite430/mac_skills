@@ -1,0 +1,11 @@
+# 上次连接信息缓存文件
+# 格式: KEY=VALUE
+# 此文件会自动更新，请勿手动修改
+
+# 数据库连接参数
+DB_HOST=172.16.101.111
+DB_PORT=1521
+DB_SERVICE=orcl
+DB_USER=SICHUAN_LESHAN
+DB_PASS=1
+ORACLE_CONTAINER=oracle-21c-local

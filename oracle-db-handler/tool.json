@@ -1,0 +1,109 @@
+{
+  "name": "oracle-db-handler",
+  "description": "国库集中支付系统Oracle数据库操作工具，支持执行查询和自动数据修复。当用户需要修改数据库使特定SQL查询返回数据时调用此工具。",
+  "version": "4.0.0",
+  "author": "Treasury System Team",
+  "invoke_condition": "当用户提供SQL查询语句并希望该查询返回数据时调用",
+  "parameters": {
+    "host": {
+      "type": "string",
+      "required": false,
+      "description": "数据库服务器地址",
+      "default": "172.16.101.111"
+    },
+    "port": {
+      "type": "string",
+      "required": false,
+      "description": "Oracle监听端口",
+      "default": "1521"
+    },
+    "service": {
+      "type": "string",
+      "required": false,
+      "description": "Oracle服务名",
+      "default": "orcl"
+    },
+    "user": {
+      "type": "string",
+      "required": false,
+      "description": "数据库用户名",
+      "default": "SICHUAN_LESHAN"
+    },
+    "password": {
+      "type": "string",
+      "required": false,
+      "description": "数据库密码",
+      "default": "1"
+    },
+    "sql_statement": {
+      "type": "string",
+      "required": true,
+      "description": "用户提供的SQL查询语句，需要使其返回数据"
+    },
+    "action": {
+      "type": "string",
+      "required": false,
+      "description": "执行动作: query(仅查询), fix(修复数据使查询有值)",
+      "default": "fix"
+    }
+  },
+  "commands": {
+    "execute_query": {
+      "description": "执行SQL查询",
+      "template": "docker exec oracle-21c-local bash -c \"echo \\\"{sql_statement}\\\" | sqlplus -s {user}/{password}@//{host}:{port}/{service}\""
+    },
+    "fix_data": {
+      "description": "分析查询条件并修改数据库使其返回数据",
+      "template": "cd /Users/zhangchengke/Documents/ZKJN/code/db/.trae/skills/oracle-db-handler && ./run_query.sh fix '{sql_statement}'"
+    },
+    "test_connection": {
+      "description": "测试数据库连接",
+      "template": "docker exec oracle-21c-local bash -c \"echo \\\"SELECT 'Connected' FROM dual\\\" | sqlplus -s {user}/{password}@//{host}:{port}/{service}\""
+    }
+  },
+  "workflow": [
+    {
+      "step": "1",
+      "name": "验证连接",
+      "command": "test_connection",
+      "description": "测试数据库连接是否正常"
+    },
+    {
+      "step": "2",
+      "name": "执行查询",
+      "command": "execute_query",
+      "description": "执行用户提供的SQL查询，检查当前结果"
+    },
+    {
+      "step": "3",
+      "name": "修复数据",
+      "command": "fix_data",
+      "description": "如果查询结果为0，自动修改数据库使其返回数据"
+    },
+    {
+      "step": "4",
+      "name": "验证结果",
+      "command": "execute_query",
+      "description": "再次执行查询，确认修复成功"
+    }
+  ],
+  "supported_tables": [
+    "PB_PAY_VOUCHER",
+    "PB_REALPAY_BUDGET_VOUCHER", 
+    "PB_DEMAND_NOTE_VOUCHER",
+    "PB_PAYBACK_VOUCHER",
+    "PB_PAY_REQUEST"
+  ],
+  "examples": [
+    {
+      "input": "select count(1) AS ct from (select 1 from PB_PAY_VOUCHER objsrc_2742 where admdiv_code = '511100' and vt_code = '5214' and business_type = '0') st",
+      "action": "fix",
+      "result": "查询结果从0变为1，已成功修复数据"
+    },
+    {
+      "input": "select count(1) AS ct from (select 1 from PB_REALPAY_BUDGET_VOUCHER objsrc_6815 where business_type <= 0 and is_input = 0) st",
+      "action": "fix",
+      "result": "查询结果从0变为1，已成功修复数据"
+    }
+  ]
+}
