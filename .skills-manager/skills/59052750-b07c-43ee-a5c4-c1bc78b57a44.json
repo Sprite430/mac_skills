@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "59052750-b07c-43ee-a5c4-c1bc78b57a44",
+  "path": "xinchuang-bank-upgrade-change-code",
+  "path_key": "xinchuang-bank-upgrade-change-code",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
