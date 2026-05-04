@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "b2e9d7b4-552f-4c01-8e64-adca34aad22c",
+  "path": "pb-server-developer",
+  "path_key": "pb-server-developer",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}

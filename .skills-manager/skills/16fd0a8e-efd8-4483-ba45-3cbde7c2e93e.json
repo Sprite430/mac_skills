@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "16fd0a8e-efd8-4483-ba45-3cbde7c2e93e",
+  "path": "skill-creator",
+  "path_key": "skill-creator",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "muranustb/skills-create_skills/skill-creator",
+    "subpath": "skills/skills-creator",
+    "branch": null
+  }
+}
