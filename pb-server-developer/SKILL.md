@@ -1,3 +1,9 @@
+---
+name: pb-server-developer
+description: 国库集中支付系统开发辅助工具
+author: zhangchengke
+---
+
 # 国库集中支付系统开发辅助工具
 
 ## 1. 技能概述
@@ -12,10 +18,10 @@
 
 | 版本 | 架构模式 | 配置方式 | 产品化包格式 |
 |------|----------|----------|--------------|
-| **2.x版本** | 传统Java Web | XML配置为主 | Pb-{版本号}-sources |
+| **2.x版本** | 传统Java Web | Controller注解+Service XML配置 | Pb-{版本号}-sources |
 | **3.x版本** | Spring Boot | 注解配置为主 | pb-{版本号}.jar |
 
-2.x版本采用传统的Java Web架构，Bean配置主要通过XML文件完成。3.x版本采用Spring Boot框架，全面使用注解进行Bean定义和依赖注入，架构更加现代化。
+2.x版本采用传统的Java Web架构，Controller使用 `@Controller`、`@Autowired` 等注解，Service及其他业务Bean通过XML配置进行依赖注入。3.x版本采用Spring Boot框架，全面使用注解进行Bean定义和依赖注入，架构更加现代化。
 
 ### 1.3 术语定义
 
@@ -23,23 +29,27 @@
 
 **1. 产品化代码**
 
-指产品化厂商提供的标准代码，存放在项目根目录的 `source_code_lib/` 目录中。2.x版本以源码包形式存在（如 `Pb-2.1.1-sources`），3.x版本被打包为JAR文件通过Maven依赖引入（如 `pb-3.4.9.jar`）。
+指产品化厂商提供的标准代码，存放在项目根目录的 `source_code_lib/` 目录中，只用来参考。2.x版本以源码包形式存在（如 `Pb-2.1.1-sources`），3.x版本被打包为JAR文件通过Maven依赖引入（如 `pb-3.4.9.jar`）。
 
 **2. 初始化代码**
 
 指页面创建时，在JSP中通过 `<script>` 标签直接引入的JavaScript文件。初始化代码与页面一一对应，是页面首次创建时的基础功能代码。初始化代码可能存放在 `realware/js/` 目录，也可能存放在省份定制目录下（如 `realware/{省份}_js/`）。
 
+**使用场景**：从零设计一个完整页面时，页面的按钮、交互行为等核心功能都应在初始化代码中一步到位。初始化代码代表的是"创建页面"这个动作，设计时应确保页面功能完整。
+
 **3. 个性化代码**
 
 指页面已存在后，通过 `GAP_MODULE.REF_JS` 配置引入的JavaScript文件。个性化代码用于在不修改初始化代码的情况下，为页面添加额外的功能扩展。个性化代码通常以 `Custom` 结尾，存放在省份定制目录下（如 `realware/{省份}_js/RefundZero4UnityCustom.js`）。
+
+**使用场景**：页面运行一段时间后发现原有功能无法满足新需求，或者页面直接使用的是产品化代码不便修改原文件时，通过添加个性化代码对部分功能进行重写或扩展，只需新增一个JS文件并在数据库中配置即可添加新按钮等。
 
 **4. 省份个性化代码**
 
 指针对特定省份定制的JavaScript代码，存放在各省份的定制目录下（如 `scbank_js/`、`leshan_js/` 等）。省份个性化代码目录既可以存放初始化代码，也可以存放个性化代码，区分依据是代码的引入方式而非存放位置。
 
 **核心区别**：
-- **初始化代码** = JSP中 `<script>` 标签直接引入
-- **个性化代码** = `GAP_MODULE.REF_JS` 配置引入
+- **初始化代码** = JSP中 `<script>` 标签直接引入 → 用于**创建页面**，设计完整功能
+- **个性化代码** = `GAP_MODULE.REF_JS` 配置引入 → 用于**扩展已有页面**，不修改原代码
 - 两者可以共存于同一个省份定制目录中
 
 ### 1.4 适用场景
@@ -72,7 +82,7 @@
 
 **多版本代码生成**
 
-根据项目版本自动适配相应的代码模板。2.x版本生成XML配置和继承基类的Controller代码，3.x版本生成注解配置的Controller和Service代码。所有生成的代码都遵循对应版本的编码规范和命名约定。
+根据项目版本自动适配相应的代码模板。2.x版本Controller使用注解配置，Service通过XML配置进行依赖注入；3.x版本全面使用注解配置方式。所有生成的代码都遵循对应版本的编码规范和命名约定。
 
 **灵活的代码生成**
 
@@ -132,11 +142,12 @@
 │   │           ├── views/            # 初始化JSP
 │   │           └── viewscustom/      # 个性化JSP（3.x专用）
 │   └── pom.xml
+├── source_code_lib/                   # 产品化代码库（参考用，不可修改）
 ├── pom.xml                            # Maven父配置
 └── {其他模块}/                        # 其他业务模块
 ```
 
-3.x版本的源码不再以独立的源码包形式存在，而是被打包为JAR文件，通过Maven依赖引入。例如：`pb-3.4.9.jar`、`pb-utils-3.4.9.jar`等。
+3.x版本同样在项目根目录下提供 `source_code_lib/` 目录存放产品化源码，供开发时参考但不可修改。产品化代码也通过Maven依赖以JAR文件形式引入（如 `pb-3.4.9.jar`、`pb-utils-3.4.9.jar`等）。
 
 ### 2.4 两种版本的核心差异
 
@@ -144,12 +155,31 @@
 
 **2.x版本配置方式**
 
-2.x版本的Bean配置主要通过XML文件完成。Controller需要继承基类或实现接口，Service通过XML注入依赖。
+2.x版本中，Controller使用 `@Controller` 和 `@Autowired` 注解进行定义和依赖注入；Service及其他业务Bean通过XML配置进行依赖注入，不使用 `@Service` 注解。拦截器、视图解析器、消息转换器等基础设施同样通过XML配置完成。
+
+**重要规范**：2.x版本原则上不使用 `@Service` 注解。如果项目中已存在使用 `@Service` 的代码，属于不规范写法，应予以注释移除。Controller通过 `<context:component-scan>` 自动扫描注册，Service通过XML的 `<bean>` 和 `<property>` 标签配置。
 
 ```xml
-<!-- beans-config.xml (2.x) -->
-<bean id="userService" class="com.example.UserServiceImpl">
-    <property name="userDao" ref="userDao"/>
+<!-- springmvc-servlet.xml (2.x) -->
+<!-- 启动扫描所有的controller -->
+<context:component-scan base-package="grp">
+    <context:exclude-filter type="regex" expression="grp\.pb\.branch\.workday\..*"/>
+</context:component-scan>
+
+<!-- 拦截器、视图解析器等基础设施仍通过XML配置 -->
+<mvc:annotation-driven />
+<mvc:interceptors>
+    <mvc:interceptor>
+        <mvc:mapping path="/**" />
+        <bean class="grp.pt.pb.web.interceptor.MyInterceptor"></bean>
+    </mvc:interceptor>
+</mvc:interceptors>
+```
+
+```xml
+<!-- custom-context.xml (2.x) - Service的XML配置 -->
+<bean id="${SERVICE_VARIABLE}" class="${PACKAGE_NAME}.${SERVICE_CLASS_NAME}ServiceImpl">
+    <property name="daoSupport" ref="bill.DaoSupport"/>
 </bean>
 ```
 
@@ -173,24 +203,28 @@ public class UserServiceImpl implements IUserService {
 |----------|--------------|--------------|
 | 个性化JSP | 无专门目录 | `{模块}/viewscustom/` |
 | 定制JS | `realware/{定制标识}_js/` | `{模块}/static/{模块标识}_js/` |
-| Controller | 继承基类 | `@Controller`注解 |
-| Service | XML配置 | `@Service`注解 |
+| Controller | `@Controller`注解+继承RootController | `@Controller`注解+继承RootController |
+| Service | XML配置（`<bean>`+`<property>`） | `@Service`注解 |
 
 #### 2.4.3 Controller实现差异
 
 **2.x版本Controller**
 
+2.x版本Controller继承 `RootController`，使用 `@Controller` 注解标记，通过 `@Autowired` 注入依赖服务。
+
 ```java
 // 2.x版本
-public class UserController extends BaseController {
+@Controller
+public class UserController extends RootController {
     
+    private static Logger log = Logger.getLogger(UserController.class);
+    
+    @Autowired
     private IUserService userService;
     
-    public void setUserService(IUserService userService) {
-        this.userService = userService;
-    }
-    
-    public ModelAndView list(HttpServletRequest request) {
+    @RequestMapping(value = "/list.do")
+    public @ResponseBody Object list(HttpServletRequest request, HttpServletResponse response) {
+        Session sc = copySession(request);
         // 实现代码
     }
 }
@@ -198,18 +232,20 @@ public class UserController extends BaseController {
 
 **3.x版本Controller**
 
+3.x版本Controller同样继承 `RootController`，使用 `@Controller` 和 `@Slf4j` 注解。不使用类级别 `@RequestMapping`，每个方法使用完整路径映射。
+
 ```java
 // 3.x版本
 @Slf4j
 @Controller
-@RequestMapping("/user")
 public class UserController extends RootController {
     
     @Autowired
     private IUserService userService;
     
-    @RequestMapping("/list.do")
-    public ModelAndView list(HttpServletRequest request) {
+    @RequestMapping(value = "/list.do")
+    public @ResponseBody Object list(HttpServletRequest request, HttpServletResponse response) {
+        Session sc = copySession(request);
         log.info("查询用户列表");
         // 实现代码
     }
@@ -234,21 +270,37 @@ MVC模式的JSP页面需要在script标签中声明controllers数组和mainView�
 
 这种模式适合功能复杂的业务页面，多个功能模块需要协同工作的情况。
 
+### 2.6 页面模式选择建议
+
+在实际开发中，页面模式的选择应基于功能复杂度：
+
+- **功能简单的单页面**（如单一查询、简单表单）→ 选择EXT传统模式，代码集中易于维护
+- **功能复杂的业务页面**（如多Tab、多区域联动、复杂工作流）→ 选择MVC模式，代码分层清晰便于协作
+
+如果不确定页面复杂度，建议默认选择MVC模式，因为MVC模式向下兼容简单场景，而EXT模式难以向上扩展为复杂页面。
+
 ### 2.7 JavaScript文件说明
 
-在国库集中支付系统中，JavaScript文件按照用途和引入方式分为两类：初始化代码和个性化代码。
+本节重点说明初始化代码与个性化代码的**设计意图和使用时机**，帮助开发者做出正确的选择。技术定义详见1.3节。
 
-**初始化JavaScript文件**
+**何时编写初始化代码**
 
-初始化JavaScript文件是页面首次创建时，在JSP中通过 `<script>` 标签直接引入的文件。初始化JavaScript文件包含页面的核心业务逻辑，与页面一一对应。初始化JavaScript文件可能存放在 `realware/js/` 目录，也可能存放在省份定制目录下。
+初始化代码是"创建页面"这一动作的核心产物。当需要从零设计一个新页面时，页面的所有按钮、交互行为、数据加载逻辑都应在初始化代码中一步到位。初始化代码代表页面的完整功能设计，编写时应确保功能完备。
 
-**个性化JavaScript文件**
+**何时编写个性化代码**
 
-个性化JavaScript文件用于在不修改初始化代码的情况下，为页面添加额外的功能扩展。个性化JavaScript文件通过 `GAP_MODULE.REF_JS` 字段配置引入。个性化JavaScript文件的命名规范是在初始化文件名后加上Custom后缀，例如：`{页面名}Custom.js`。
+个性化代码是"扩展已有页面"的手段。以下场景应使用个性化代码：
+- 页面运行一段时间后，发现原有功能无法满足新的业务需求
+- 页面直接使用的是产品化代码，不便修改原文件
+- 需要对初始化代码中的部分功能进行重写或覆盖，但不影响原有逻辑
 
-**重要说明**
+个性化代码的优势在于不修改原文件，只需新增一个JS文件并在数据库 `GAP_MODULE.REF_JS` 中配置即可生效，便于后续产品化版本升级。
 
-省份定制目录（如 `realware/{省份}_js/`）既可以存放初始化JavaScript文件，也可以存放个性化JavaScript文件。区分依据是代码的引入方式：JSP中 `<script>` 直接引入的为初始化代码，`GAP_MODULE.REF_JS` 配置引入的为个性化代码。
+**文件命名与存放**
+
+- 初始化JavaScript文件：与JSP页面同名，如 `PayVoucher.js`
+- 个性化JavaScript文件：在初始化文件名后加 `Custom` 后缀，如 `PayVoucherCustom.js`
+- 两者可共存于同一个省份定制目录中（如 `realware/{省份}_js/`），区分依据是引入方式而非存放位置
 
 ## 3. 数据库配置规范
 
@@ -375,20 +427,22 @@ BUTTON_ID字段是按钮配置的关键字段，个性化JavaScript中的方法�
 
 #### 3.x版本JSP模板
 
+3.x版本JSP的include路径使用相对路径引用views目录下的公共文件，JS引用使用 `<%=path%>` 前缀。
+
 ```jsp
 <%@ page language="java" pageEncoding="UTF-8"%>
-<%@ include file="/WEB-INF/views/common/taglibs.jsp"%>
+<%@ include file="../views/common/taglibs.jsp"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
     <head>
         <title>${PAGE_TITLE}</title>
-        <%@ include file="/WEB-INF/views/common/meta.jsp"%>
-        <%@ include file="/WEB-INF/views/common/scripts.jsp"%>
-        <script type="text/javascript" src="${pageContext.request.contextPath}/static/${MODULE_JS}/${JS_FILE_NAME}.js"></script>
+        <%@ include file="../views/common/meta.jsp"%>
+        <%@ include file="../views/common/scripts.jsp"%>
+        <script type="text/javascript" src="<%=path%>/${MODULE_JS}/${JS_FILE_NAME}.js"></script>
     </head>
     <script type="text/javascript">
-        var loadUrl = "${pageContext.request.contextPath}/load${ENTITY_NAME}.do";
+        var loadUrl = "<%=path%>/load${ENTITY_NAME}.do";
         var account_type_right = "${ACCOUNT_TYPE}";
         var controllers = [${CONTROLLERS}];
         var mainView = {
@@ -403,19 +457,19 @@ BUTTON_ID字段是按钮配置的关键字段，个性化JavaScript中的方法�
 
 #### 3.x版本个性化JSP模板
 
-3.x版本的个性化JSP存放在viewscustom目录下。
+3.x版本的个性化JSP存放在viewscustom目录下。include路径同样使用相对路径引用views目录下的公共文件。
 
 ```jsp
 <%@ page language="java" pageEncoding="UTF-8"%>
-<%@ include file="/WEB-INF/views/common/taglibs.jsp"%>
+<%@ include file="../views/common/taglibs.jsp"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
     <head>
         <title>${PAGE_TITLE}</title>
-        <%@ include file="/WEB-INF/views/common/meta.jsp"%>
-        <%@ include file="/WEB-INF/views/common/scripts.jsp"%>
-        <script type="text/javascript" src="${pageContext.request.contextPath}/static/${MODULE_JS}/${JS_FILE_NAME}Custom.js"></script>
+        <%@ include file="../views/common/meta.jsp"%>
+        <%@ include file="../views/common/scripts.jsp"%>
+        <script type="text/javascript" src="<%=path%>/${MODULE_JS}/${JS_FILE_NAME}Custom.js"></script>
     </head>
     <body></body>
 </html>
@@ -425,54 +479,27 @@ BUTTON_ID字段是按钮配置的关键字段，个性化JavaScript中的方法�
 
 #### 2.x版本Controller模板
 
-```java
-package ${PACKAGE_NAME};
-
-import grp.pt.pb.web.BaseController;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.springframework.web.servlet.ModelAndView;
-
-public class ${CONTROLLER_NAME}Controller extends BaseController {
-    
-    private ${SERVICE_INTERFACE} ${SERVICE_VARIABLE};
-    
-    public void set${SERVICE_VARIABLE}(${SERVICE_INTERFACE} ${SERVICE_VARIABLE}) {
-        this.${SERVICE_VARIABLE} = ${SERVICE_VARIABLE};
-    }
-    
-    public ModelAndView loadPage(HttpServletRequest request, HttpServletResponse response) {
-        ModelAndView view = new ModelAndView("/${JSP_PATH}");
-        return view;
-    }
-}
-```
-
-#### 3.x版本Controller模板
+2.x版本Controller继承 `RootController`，使用 `@Controller` 注解和 `@Autowired` 注入。
 
 ```java
 package ${PACKAGE_NAME}.web;
 
 import grp.pt.pb.web.RootController;
-import lombok.extern.slf4j.Slf4j;
+import grp.pt.util.model.Session;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
-import java.util.Map;
 
-/**
- * ${CONTROLLER_DESCRIPTION}
- * ${MODULE_NAME}模块Web控制器
- */
-@Slf4j
 @Controller
-@RequestMapping(value = "/${REQUEST_MAPPING}")
 public class ${CONTROLLER_NAME}Controller extends RootController {
+
+    private static Logger log = Logger.getLogger(${CONTROLLER_NAME}Controller.class);
 
     @Autowired
     private ${SERVICE_INTERFACE} ${SERVICE_VARIABLE};
@@ -484,9 +511,9 @@ public class ${CONTROLLER_NAME}Controller extends RootController {
      * @param response HTTP响应对象
      * @return 视图模型
      */
-    @RequestMapping(value = ".do")
+    @RequestMapping(value = "/load${JSP_NAME}.do")
     public ModelAndView loadPage(HttpServletRequest request, HttpServletResponse response) {
-        ModelAndView view = new ModelAndView("/viewscustom/${JSP_NAME}");
+        ModelAndView view = new ModelAndView("/${JSP_PATH}/${JSP_NAME}");
         return view;
     }
 
@@ -497,15 +524,67 @@ public class ${CONTROLLER_NAME}Controller extends RootController {
      * @param response HTTP响应对象
      */
     @RequestMapping(value = "/load${ENTITY_NAME}.do")
-    public void load${ENTITY_NAME}(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            Map<String, String> params = getRequestParams(request);
-            Map<String, Object> result = ${SERVICE_VARIABLE}.load${ENTITY_NAME}(params);
-            writeResponseText(response, result);
-        } catch (Exception e) {
-            log.error("加载数据失败", e);
-            writeResponseText(response, getErrorMap(e.getMessage()));
-        }
+    public @ResponseBody Object load${ENTITY_NAME}(HttpServletRequest request, HttpServletResponse response) {
+        Session sc = copySession(request);
+        // TODO: 实现加载数据逻辑
+    }
+}
+```
+
+#### 3.x版本Controller模板
+
+3.x版本Controller同样继承 `RootController`，使用 `@Controller` 和 `@Slf4j` 注解。不使用类级别 `@RequestMapping`，每个方法使用完整路径映射。
+
+```java
+package ${PACKAGE_NAME}.web;
+
+import grp.pt.pb.web.RootController;
+import grp.pt.util.model.Session;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * ${CONTROLLER_DESCRIPTION}
+ * ${MODULE_NAME}模块Web控制器
+ */
+@Slf4j
+@Controller
+public class ${CONTROLLER_NAME}Controller extends RootController {
+
+    @Autowired
+    private ${SERVICE_INTERFACE} ${SERVICE_VARIABLE};
+
+    /**
+     * 加载页面
+     * JSP路径根据项目类型选择：省份定制项目放viewscustom，产品化项目放views
+     *
+     * @param request  HTTP请求对象
+     * @param response HTTP响应对象
+     * @return 视图模型
+     */
+    @RequestMapping(value = "/load${JSP_NAME}.do")
+    public ModelAndView loadPage(HttpServletRequest request, HttpServletResponse response) {
+        ModelAndView view = new ModelAndView("/${JSP_DIR}/${JSP_NAME}");
+        return view;
+    }
+
+    /**
+     * 加载数据
+     *
+     * @param request  HTTP请求对象
+     * @param response HTTP响应对象
+     */
+    @RequestMapping(value = "/load${ENTITY_NAME}.do")
+    public @ResponseBody Object load${ENTITY_NAME}(HttpServletRequest request, HttpServletResponse response) {
+        Session sc = copySession(request);
+        // TODO: 实现加载数据逻辑
     }
 
     /**
@@ -515,99 +594,128 @@ public class ${CONTROLLER_NAME}Controller extends RootController {
      * @param response HTTP响应对象
      */
     @RequestMapping(value = "/save${ENTITY_NAME}.do")
-    public void save${ENTITY_NAME}(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            Map<String, String> params = getRequestParams(request);
-            Map<String, Object> result = ${SERVICE_VARIABLE}.save${ENTITY_NAME}(params);
-            writeResponseText(response, result);
-        } catch (Exception e) {
-            log.error("保存数据失败", e);
-            writeResponseText(response, getErrorMap(e.getMessage()));
-        }
+    public @ResponseBody Object save${ENTITY_NAME}(HttpServletRequest request, HttpServletResponse response) {
+        Session sc = copySession(request);
+        // TODO: 实现保存数据逻辑
     }
 }
 ```
+
+**JSP路径说明**：`${JSP_DIR}` 根据项目类型确定，生成时应询问用户：
+- 省份定制项目 → `viewscustom`
+- 产品化项目 → `views`
 
 ### 4.4 Service模板
 
 #### 2.x版本Service模板
 
-```java
-package ${PACKAGE_NAME};
+2.x版本Service不使用 `@Service` 注解，通过XML配置进行依赖注入。Service实现类使用setter方法接收注入的依赖。
 
-import java.util.Map;
-
-public class ${SERVICE_CLASS_NAME}Service implements ${SERVICE_INTERFACE} {
-    
-    public Map<String, Object> load${ENTITY_NAME}(Map<String, String> params) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        // TODO: 实现加载逻辑
-        return result;
-    }
-}
-```
-
-#### 3.x版本Service模板
+**Service实现类模板**
 
 ```java
 package ${PACKAGE_NAME}.service;
 
+import grp.pt.bill.ConditionObj;
+import grp.pt.bill.Paging;
+import grp.pt.bill.ReturnPage;
+import grp.pt.util.model.Session;
+
+public class ${SERVICE_CLASS_NAME}ServiceImpl implements ${SERVICE_CLASS_NAME}Service {
+
+    private DaoSupport daoSupport;
+
+    public void setDaoSupport(DaoSupport daoSupport) {
+        this.daoSupport = daoSupport;
+    }
+
+    /**
+     * 加载${ENTITY_NAME}数据
+     */
+    public ReturnPage load${ENTITY_NAME}(Session sc, ConditionObj obj, Paging page) {
+        // TODO: 实现加载逻辑
+        return null;
+    }
+}
+```
+
+**Service XML配置模板**
+
+Service需要在项目的XML配置文件（如 `custom-context.xml`）中添加bean定义：
+
+```xml
+<!-- ${SERVICE_CLASS_NAME}Service配置 -->
+<bean id="${SERVICE_VARIABLE}" class="${PACKAGE_NAME}.service.${SERVICE_CLASS_NAME}ServiceImpl">
+    <property name="daoSupport" ref="bill.DaoSupport"/>
+</bean>
+```
+
+#### 3.x版本Service模板
+
+3.x版本Service采用接口与实现分离的模式，接口定义在 `service/` 包下，实现类放在 `service/impl/` 包下。
+
+**Service接口模板**
+
+```java
+package ${PACKAGE_NAME}.service;
+
+import grp.pt.bill.ConditionObj;
+import grp.pt.bill.Paging;
+import grp.pt.bill.ReturnPage;
+import grp.pt.util.model.Session;
+
+/**
+ * ${SERVICE_DESCRIPTION}
+ */
+public interface ${SERVICE_CLASS_NAME}Service {
+
+    /**
+     * 加载${ENTITY_NAME}数据
+     *
+     * @param sc   会话对象
+     * @param obj  查询条件
+     * @param page 分页参数
+     * @return 分页查询结果
+     */
+    ReturnPage load${ENTITY_NAME}(Session sc, ConditionObj obj, Paging page);
+}
+```
+
+**Service实现类模板**
+
+```java
+package ${PACKAGE_NAME}.service.impl;
+
+import ${PACKAGE_NAME}.service.${SERVICE_CLASS_NAME}Service;
+import grp.pt.bill.ConditionObj;
+import grp.pt.bill.DaoSupport;
+import grp.pt.bill.Paging;
+import grp.pt.bill.ReturnPage;
+import grp.pt.util.model.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * ${SERVICE_DESCRIPTION}
- * ${MODULE_NAME}模块业务服务
+ * ${MODULE_NAME}模块业务服务实现
  */
 @Slf4j
 @Service
-public class ${SERVICE_CLASS_NAME}Service {
+@Transactional(rollbackFor = Exception.class)
+public class ${SERVICE_CLASS_NAME}ServiceImpl implements ${SERVICE_CLASS_NAME}Service {
 
     @Autowired
-    private ${DAO_INTERFACE} ${DAO_VARIABLE};
+    private DaoSupport daoSupport;
 
     /**
      * 加载${ENTITY_NAME}数据
-     *
-     * @param params 查询参数
-     * @return 查询结果
      */
-    public Map<String, Object> load${ENTITY_NAME}(Map<String, String> params) {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            // TODO: 实现加载逻辑
-            result.put("success", true);
-            result.put("data", new java.util.ArrayList<>());
-        } catch (Exception e) {
-            log.error("加载${ENTITY_NAME}失败", e);
-            result.put("success", false);
-            result.put("message", e.getMessage());
-        }
-        return result;
-    }
-
-    /**
-     * 保存${ENTITY_NAME}数据
-     *
-     * @param params 保存参数
-     * @return 保存结果
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public Map<String, Object> save${ENTITY_NAME}(Map<String, String> params) {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            // TODO: 实现保存逻辑
-            result.put("success", true);
-            result.put("message", "保存成功");
-        } catch (Exception e) {
-            log.error("保存${ENTITY_NAME}失败", e);
-            throw new RuntimeException(e.getMessage());
-        }
+    @Override
+    public ReturnPage load${ENTITY_NAME}(Session sc, ConditionObj obj, Paging page) {
+        // TODO: 实现加载逻辑
+        return null;
     }
 }
 ```
@@ -640,24 +748,39 @@ function ${OVERRIDE_FUNCTION}() {
 
 #### 2.x版本Job模板
 
+2.x版本Job继承 `AutoJobAdapter`，覆写无参的 `executeJob()` 方法。使用 `log4j` 的 `Logger` 记录日志，通过 `StaticApplication` 获取DAO等Bean。
+
 ```java
 package ${PACKAGE_NAME}.job;
 
-import grp.pt.autotask.bs.SysAutoTaskBO;
-import grp.pt.autotask.model.AutoTaskVO;
+import grp.pt.pb.common.AutoJobAdapter;
+import grp.pt.util.BaseDAO;
+import grp.pt.pb.util.StaticApplication;
+import org.apache.log4j.Logger;
 
-public class ${TASK_CLASS_NAME}Job extends SysAutoTaskBO {
+/**
+ * ${TASK_NAME} - ${TASK_DESCRIPTION}
+ */
+public class ${TASK_CLASS_NAME}Job extends AutoJobAdapter {
+
+    private Logger log = Logger.getLogger(${TASK_CLASS_NAME}Job.class);
+    private static BaseDAO baseDao;
+
+    private void init() {
+        if (baseDao == null) {
+            baseDao = StaticApplication.getBaseDAO();
+        }
+    }
 
     @Override
-    public boolean execute(AutoTaskVO taskVO) throws Exception {
+    public void executeJob() {
+        log.info("${TASK_NAME} 开始执行...");
+        init();
         try {
-            logger.info("${TASK_NAME} 开始执行...");
             // TODO: 实现具体业务逻辑
-            logger.info("${TASK_NAME} 执行完成");
-            return true;
+            log.info("${TASK_NAME} 执行完成");
         } catch (Exception e) {
-            logger.error("${TASK_NAME} 执行失败", e);
-            return false;
+            log.error("${TASK_NAME} 执行失败", e);
         }
     }
 }
@@ -665,38 +788,45 @@ public class ${TASK_CLASS_NAME}Job extends SysAutoTaskBO {
 
 #### 3.x版本Job模板
 
+3.x版本Job继承 `ParameterAutoJobAdapter`，覆写 `executeJob(JobDataMap paraMap)` 方法。使用 `@Slf4j` 注解记录日志，不需要 `@Component` 注解（Job由框架自动扫描管理）。
+
 ```java
 package ${PACKAGE_NAME}.job;
 
-import grp.pt.autotask.bs.SysAutoTaskBO;
-import grp.pt.autotask.model.AutoTaskVO;
+import grp.pt.pb.common.ParameterAutoJobAdapter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.quartz.JobDataMap;
+import org.quartz.UnableToInterruptJobException;
 
 /**
  * ${TASK_NAME} - ${TASK_DESCRIPTION}
  * 自动任务实现类
  */
 @Slf4j
-@Component
-public class ${TASK_CLASS_NAME}Job extends SysAutoTaskBO {
+public class ${TASK_CLASS_NAME}Job extends ParameterAutoJobAdapter {
 
     @Override
-    public boolean execute(AutoTaskVO taskVO) throws Exception {
+    public void executeJob(JobDataMap paraMap) throws Exception {
+        log.info("${TASK_NAME} 开始执行...");
         try {
-            log.info("${TASK_NAME} 开始执行...");
             // TODO: 实现具体业务逻辑
             log.info("${TASK_NAME} 执行完成");
-            return true;
         } catch (Exception e) {
             log.error("${TASK_NAME} 执行失败", e);
-            return false;
+            throw e;
         }
+    }
+
+    @Override
+    public void interrupt() throws UnableToInterruptJobException {
+        // 任务中断处理
     }
 }
 ```
 
 ## 5. SQL生成规范
+
+**事务说明**：一组相关的INSERT语句应在同一事务中执行，全部INSERT完成后统一COMMIT，确保数据一致性。以下模板中每条INSERT后不再单独COMMIT，而是在整组SQL末尾统一COMMIT。
 
 ### 5.1 GAP_MODULE INSERT模板
 
@@ -711,8 +841,6 @@ INSERT INTO GAP_MODULE (
     '${REMARK}', ${SYSTEM_ID}, SYSDATE, 0,
     ${IS_ACCOUNT}, '${PARA_CONFIG_CLASS}', '${BACKLOG_CLASS_NAME}', '${REF_JS}'
 );
-
-COMMIT;
 ```
 
 ### 5.2 GAP_MENU INSERT模板
@@ -726,8 +854,6 @@ INSERT INTO GAP_MENU (
     ${ID}, ${MODULE_ID}, '${MENU_NAME}', '${URL}', ${PARENT_ID},
     ${ORDER_NUM}, '${ICON}', ${STATUS}
 );
-
-COMMIT;
 ```
 
 ### 5.3 PB_SYS_BUTTON INSERT模板
@@ -743,8 +869,6 @@ INSERT INTO PB_SYS_BUTTON (
     '${ICON}', ${CUSTOM}, '${STATUS_CODES}', ${DISP_ORDER},
     '${ENABLE_ADMDIVS}', '${DISABLE_ADMDIVS}'
 );
-
-COMMIT;
 ```
 
 ### 5.4 PB_SYS_STATUS INSERT模板
@@ -758,8 +882,6 @@ INSERT INTO PB_SYS_STATUS (
     '${STATUS_ID}', '${JSP_NAME}', '${STATUS_CODE}', '${STATUS_NAME}',
     '${CONDITION}', ${TYPE}, ${MENU_ID}
 );
-
-COMMIT;
 ```
 
 ### 5.5 PB_STATUS_CONDITION INSERT模板
@@ -773,7 +895,13 @@ INSERT INTO PB_STATUS_CONDITION (
     '${STATUS_CID}', '${STATUS_ID}', '${OPERATION}', '${ATTR_CODE}',
     '${RELATION}', '${VALUE}', '${ALIAS}', ${DATATYPE}
 );
+```
 
+### 5.6 事务提交
+
+所有相关的INSERT语句执行完毕后，统一提交事务：
+
+```sql
 COMMIT;
 ```
 
@@ -813,21 +941,30 @@ COMMIT;
 
 系统根据版本类型展示相应的文件存放位置。2.x版本使用realware目录结构，3.x版本使用模块化目录结构。
 
-**第四步：菜单配置**
+**第四步：JSP存放位置选择**
+
+系统询问JSP页面的存放位置：
+- 省份定制项目 → 新增页面放 `viewscustom/` 目录
+- 产品化项目 → 新增页面放 `views/` 目录
+
+此选择将影响Controller中loadPage方法的JSP路径和JSP文件的实际存放目录。
+
+**第五步：菜单配置**
 
 用户需要提供菜单位置信息，包括父级菜单名称、菜单显示名称等。
 
-**第五步：按钮配置**
+**第六步：按钮配置**
 
 用户需要提供按钮列表信息，包括每个按钮的ID、名称、图标、显示顺序、状态关联等。
 
-**第六步：状态配置**
+**第七步：状态配置**
 
 用户需要提供页面状态列表，包括每个状态的编码、名称、判断条件等。
 
-**第七步：Java代码生成**
+**第八步：Java代码生成**
 
-系统根据版本类型生成对应的Controller和Service代码。2.x版本生成XML配置和继承基类的代码，3.x版本生成注解配置的代码。
+系统根据版本类型生成对应的Controller和Service代码。2.x版本Controller使用注解配置（@Controller、@Autowired），Service通过XML配置进行依赖注入；3.x版本全面使用注解配置方式。
+
 
 ### 6.3 场景二：新增初始化JS按钮
 
@@ -988,13 +1125,13 @@ E. 其他定制开发
 
 **配置方式差异**
 
-3.x版本不再使用XML配置，所有Bean配置都使用注解方式。如果需要自定义配置，应创建@Configuration注解的配置类。
+2.x版本中，Controller使用 `@Controller`、`@Autowired` 注解，Service及其他业务Bean通过XML配置（`<bean>`+`<property>`）进行依赖注入，不使用 `@Service` 注解。3.x版本全面使用注解方式，所有Bean都通过 `@Service`、`@Autowired` 等注解配置。如果需要自定义配置，应创建@Configuration注解的配置类。
 
 ### 10.2 常见问题处理
 
 **ID冲突问题**
 
-如果在执行SQL时遇到唯一约束冲突，说明生成的ID与数据库中已有记录重复。解决方法是在执行前重新查询表的最大ID。
+如果在执行SQL时遇到唯一约束冲突，说明生成的ID与数据库中已有记录重复。解决方法是在执行前重新查询表的最大ID，或者生成后让工作人员手动修改。
 
 **按钮不显示问题**
 
@@ -1004,9 +1141,9 @@ E. 其他定制开发
 
 如果个性化JavaScript文件没有被加载，可能的原因包括：REF_JS配置路径不正确、JavaScript文件不存在、JavaScript文件语法错误等。
 
-**Controller注入失败（3.x版本）**
+**Controller注入失败**
 
-检查@Service注解是否正确添加，确保被注入的类已经纳入Spring容器管理。
+检查@Service注解是否正确添加，确保被注入的类已经纳入Spring容器管理。2.x版本还需检查springmvc-servlet.xml中的component-scan配置是否覆盖了Controller所在的包路径。
 
 ## 11. 参考资料
 
@@ -1023,14 +1160,17 @@ E. 其他定制开发
 | ${VIEW_XTYPE} | 视图组件类型 | printVoucherList |
 | ${PACKAGE_NAME} | Java包名 | grp.pb.branch.rcc |
 | ${MODULE_NAME} | 模块名称 | rcc |
-| ${MODULE_JS} | 模块JS目录 | RCU_js |
+| ${MODULE_JS} | 模块JS目录名 | boc_js |
 | ${CONTROLLER_NAME} | 控制器类名 | PayVoucher |
+| ${SERVICE_CLASS_NAME} | 服务类名（不含Service后缀） | PayVoucher |
 | ${SERVICE_INTERFACE} | 服务接口名 | IPayVoucherService |
 | ${SERVICE_VARIABLE} | 服务变量名 | payVoucherService |
 | ${BUTTON_ID} | 按钮ID | inputCustom |
 | ${BUTTON_NAME} | 按钮名称 | 自定义录入 |
 | ${FUNCTION_IMPL} | 函数实现 | Ext.widget(...) |
 | ${JSP_NAME} | JSP文件名 | PayVoucherForm |
+| ${JSP_DIR} | JSP存放目录 | viewscustom或views |
+| ${JSP_PATH} | JSP路径前缀 | viewscustom或views |
 | ${VERSION} | 产品化版本 | 2.1.1或3.4.9 |
 | ${VERSION_MODE} | 版本模式 | 传统Java Web或Spring Boot |
 
@@ -1044,7 +1184,7 @@ E. 其他定制开发
 
 技能版本：3.0.0（多版本支持）
 
-创建日期：2024年
+创建日期：20260504
 
 适用版本：国库集中支付系统2.x、3.x版本
 
