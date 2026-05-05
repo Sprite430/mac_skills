@@ -559,7 +559,7 @@ import javax.servlet.http.HttpServletResponse;
 public class ${CONTROLLER_NAME}Controller extends RootController {
 
     @Autowired
-    private ${SERVICE_INTERFACE} ${SERVICE_VARIABLE};
+    private ${SERVICE_CLASS_NAME}Service ${SERVICE_VARIABLE};
 
     /**
      * 加载页面
@@ -1163,7 +1163,6 @@ E. 其他定制开发
 | ${MODULE_JS} | 模块JS目录名 | boc_js |
 | ${CONTROLLER_NAME} | 控制器类名 | PayVoucher |
 | ${SERVICE_CLASS_NAME} | 服务类名（不含Service后缀） | PayVoucher |
-| ${SERVICE_INTERFACE} | 服务接口名 | IPayVoucherService |
 | ${SERVICE_VARIABLE} | 服务变量名 | payVoucherService |
 | ${BUTTON_ID} | 按钮ID | inputCustom |
 | ${BUTTON_NAME} | 按钮名称 | 自定义录入 |
