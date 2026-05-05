@@ -114,10 +114,22 @@ author: zhangchengke
 │   │   └── view/                      # ExtJS视图组件
 │   ├── {省份}_js/                    # 省份定制JavaScript（可存放初始化代码或个性化代码）
 │   └── jscustom/                      # JavaScript自定义扩展
+├── src/
+│   └── spring-views.properties        # JSP视图映射配置（新增页面必须在此文件添加配置）
 └── source_code_lib/                   # 产品化代码库
 ```
 
 2.x版本的源码包存放在source_code_lib目录下，格式为`Pb-{版本号}-sources`。例如：`Pb-2.1.1-sources`表示2.1.1版本的源码包。
+
+**重要**：2.x版本新增页面时，必须在 `src/spring-views.properties` 文件中添加JSP视图映射配置，否则页面无法正确加载。配置格式如下：
+
+```properties
+# ${PAGE_TITLE}
+${JSP_NAME}.(class) = org.springframework.web.servlet.view.JstlView
+${JSP_NAME}.url = /WEB-INF/${JSP_DIR}/${JSP_NAME}.jsp
+```
+
+其中 `${JSP_DIR}` 为JSP文件所在的目录名（如 `views`、`RCU_jsp` 等），需根据实际JSP存放位置填写。
 
 ### 2.3 3.x版本项目架构
 
@@ -964,6 +976,18 @@ COMMIT;
 **第八步：Java代码生成**
 
 系统根据版本类型生成对应的Controller和Service代码。2.x版本Controller使用注解配置（@Controller、@Autowired），Service通过XML配置进行依赖注入；3.x版本全面使用注解配置方式。
+
+**第九步：2.x版本视图配置（仅2.x版本需要）**
+
+2.x版本新增页面时，必须在 `src/spring-views.properties` 文件中添加JSP视图映射配置：
+
+```properties
+# ${PAGE_TITLE}
+${JSP_NAME}.(class) = org.springframework.web.servlet.view.JstlView
+${JSP_NAME}.url = /WEB-INF/${JSP_DIR}/${JSP_NAME}.jsp
+```
+
+3.x版本无需此步骤，Spring Boot自动处理视图映射。
 
 
 ### 6.3 场景二：新增初始化JS按钮
