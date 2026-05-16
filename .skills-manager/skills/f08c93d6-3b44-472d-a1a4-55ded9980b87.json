@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "f08c93d6-3b44-472d-a1a4-55ded9980b87",
+  "path": "pb-deliver",
+  "path_key": "pb-deliver",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
