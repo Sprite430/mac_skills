@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "skill_id": "f08c93d6-3b44-472d-a1a4-55ded9980b87",
-  "path": "pb-deliver",
-  "path_key": "pb-deliver",
+  "skill_id": "974d6fa6-21b9-4f30-b71d-8dfddf1a4989",
+  "path": "pb-delivery",
+  "path_key": "pb-delivery",
   "enabled": true,
   "tags": [],
   "source": {

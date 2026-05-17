@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "skill_id": "b6faeaa0-0944-48ee-958a-331c7395ffab",
-  "path": "writing-plans",
-  "path_key": "writing-plans",
+  "skill_id": "4eae19e6-b6cb-428e-b13f-450aacb80578",
+  "path": "pb-requirement",
+  "path_key": "pb-requirement",
   "enabled": true,
   "tags": [],
   "source": {
-    "type": "import",
+    "type": "local",
     "ref": null,
     "subpath": null,
     "branch": null
