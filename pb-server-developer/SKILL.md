@@ -52,6 +52,10 @@ author: zhangchengke
 - **个性化代码** = `GAP_MODULE.REF_JS` 配置引入 → 用于**扩展已有页面**，不修改原代码
 - 两者可以共存于同一个省份定制目录中
 
+> **⚠️ 重要提醒：REF_JS 的生效前提**
+> 
+> `GAP_MODULE.REF_JS` 机制并非对所有页面生效。它依赖于 JSP 中是否包含了 `scripts.jsp`（该文件包含了 `${_menu.ref_js}` 的判断和加载逻辑）。详见下文 **2.8 REF_JS 加载机制说明**。
+
 ### 1.4 适用场景
 
 **场景一：新增完整页面**
@@ -74,7 +78,7 @@ author: zhangchengke
 
 **数据库配置自动生成**
 
-能够根据用户输入自动生成GAP_MODULE、GAP_MENU、PB_SYS_BUTTON、PB_SYS_STATUS、PB_STATUS_CONDITION等配置表的INSERT语句。在生成前会查询目标数据库获取当前最大值，确保生成的ID不冲突。
+能够根据用户输入自动生成GAP_MODULE、GAP_MENU、PB_SYS_BUTTON、PB_SYS_STATUS、PB_STATUS_CONDITION、PB_AUTO_TASK等配置表的INSERT语句。在生成前会查询目标数据库获取当前最大值，确保生成的ID不冲突。
 
 **多模式页面支持**
 
@@ -314,6 +318,168 @@ MVC模式的JSP页面需要在script标签中声明controllers数组和mainView�
 - 个性化JavaScript文件：在初始化文件名后加 `Custom` 后缀，如 `PayVoucherCustom.js`
 - 两者可共存于同一个省份定制目录中（如 `realware/{省份}_js/`），区分依据是引入方式而非存放位置
 
+### 2.8 REF_JS 加载机制及局限性
+
+#### 2.8.1 加载链路
+
+个性化 JS 的加载链路如下：
+
+```
+数据库 GAP_MODULE 表 (ref_js 列)
+  → Module.ref_js (ORM 映射)
+  → Menu.ref_js (MenuService.loadCompleteMenuById() 赋值)
+  → request._menu (UserController.doGo() 设置)
+  → scripts.jsp 判断 _menu.ref_js 是否为空
+  → 浏览器加载 <script src=".../${_menu.ref_js}.js">
+```
+
+关键代码位于 `doGo.do` 转发入口（UserController 第 989 行）：
+
+```java
+Menu menu = menuService.loadCompleteMenuById(Integer.parseInt(request.getParameter("id")));
+request.setAttribute("_menu", menu);
+```
+
+#### 2.8.2 REF_JS 生效条件（三个条件缺一不可）
+
+**条件 1：页面必须通过 `doGo.do` 转发**
+
+所有业务页面都通过 `/realware/doGo.do?description=xxx&id=xxx` 统一入口转发。点击菜单时，前端通过 iframe 访问此路径。不在此链路上的页面（如直接 `ModelAndView` 返回的登录页等）不会设置 `_menu`。
+
+**条件 2：JSP 必须包含 `scripts.jsp`**
+
+`scripts.jsp` 是唯一读取 `${_menu.ref_js}` 并加载个性化 JS 的地方：
+
+```jsp
+<%@ include file="../views/common/scripts.jsp"%>
+```
+
+```jsp
+<%-- scripts.jsp 内部 --%>
+<c:if test="${not empty _menu.ref_js}">
+    <script type="text/javascript" src="<%=path%>/${_menu.ref_js}.js"></script>
+</c:if>
+```
+
+`scripts.jsp` 文件位于项目模块的 `src/main/webapp/WEB-INF/views/common/scripts.jsp`。在 SiChuanApplication 项目中，仅 **luzhou 模块**有自身的 `scripts.jsp`，其他模块（rcc、boc、sccommon）通过相对路径共用 luzhou 的版本。
+
+**条件 3：GAP_MODULE 表的 REF_JS 字段有值**
+
+`loadCompleteMenuById()` 会查找菜单关联的功能模块，并将 `Module.ref_js` 复制到 `Menu.ref_js`。只有菜单关联了 `GAP_MODULE`，并且模块的 `REF_JS` 字段有值，个性化 JS 才会被加载。
+
+#### 2.8.3 REF_JS 不生效的典型场景
+
+以下场景中 REF_JS 配置无效：
+
+**场景一：JSP 未引用 scripts.jsp（最常见）**
+
+部分 JSP 文件**手工编写 HTML `<head>` 标签**，没有包含 `scripts.jsp`，因此 REF_JS 机制对其无效。典型代表是所有**账户维护相关 JSP**（约 15 个），包括但不限于：
+
+| 模块 | JSP 文件 | 用途 |
+|------|----------|------|
+| luzhou | `LZAccountOfAdmdivRealFundForm.jsp` | 财政国库资金实有资金账户维护 |
+| luzhou | `LZAccountOfDBJForm.jsp` | DBJ 账户维护 |
+| luzhou | `LZUnityAccountOfAdvanceForm.jsp` | 统一垫付账户维护 |
+| luzhou | `AccountOfClearForm.jsp` | 清算账户维护 |
+| rcc | `AccountOfAdmdivRealFundForm.jsp` | 财政国库资金实有资金账户维护 |
+| rcc | `AccountOfDBJForm.jsp` | DBJ 账户维护 |
+| boc | `BOCAccountOfAdmdivRealFundForm.jsp` | 财政国库资金实有资金账户维护 |
+| boc | `BOCUnityAccountOfZeroForm.jsp` | 统一零余额账户维护 |
+
+框架原始 JSP 示例如下（不包含 scripts.jsp）：
+
+```jsp
+<%-- pb-3.4.9 框架原始 AccountOfAdmdivRealFundForm.jsp --%>
+<html>
+<head>
+    <title>财政国库资金实有资金账户维护</title>
+    <!-- ExtJS -->
+    <link rel="stylesheet" type="text/css" href="resources/css/ext-all.css">
+    <script type="text/javascript" src="resources/js/AccountOfAdmdivRealFund.js"></script>
+    <script type="text/javascript" src="js/util/PageUtil.js"></script>
+</head>
+<script type="text/javascript">
+    var comboAdmdiv = Ext.create('Ext.data.Store', {
+        fields: ['admdiv_code', 'admdiv_name'],
+        data: ${admList}
+    });
+</script>
+<body></body>
+</html>
+```
+
+**场景二：`doGo.do` 的 id 参数无效**
+
+`id` 参数为空、非数字或对应的菜单在数据库中不存在，`loadCompleteMenuById()` 返回 `null`。
+
+**场景三：菜单未关联功能模块**
+
+`loadCompleteMenuById()` 中，只有菜单关联了 `GAP_MODULE`（且非根菜单），才会将 `ref_js` 复制到菜单对象。
+
+**场景四：haerbin 模块**
+
+haerbin 模块没有自身 JSP，也没有引用 `scripts.jsp`，REF_JS 机制在此模块完全不适用。
+
+#### 2.8.4 未包含 scripts.jsp 的页面如何添加个性化 JS
+
+对于 REF_JS 不生效的页面（如账户维护类 JSP），若需要添加个性化 JS，应采用 **"复制 JSP + 硬编码引用"** 的方式：
+
+**步骤一：复制框架原始 JSP 到项目目录**
+
+将框架（pb JAR 或 `source_code_lib` 中）的原始 JSP 复制到对应模块的目录下。
+
+- **3.x 版本**：复制到 `{模块}/src/main/webapp/WEB-INF/viewscustom/`（若该页面对应的是定制 JSP 则放入此目录）
+- **2.x 版本**：复制到 `{项目}/realware/WEB-INF/{定制}_jsp/`
+
+也可以直接复制到 `views/` 目录覆盖框架的同名 JSP（Spring Boot 会优先加载项目目录下的 JSP）。
+
+**步骤二：在 JSP 中添加个性化 JS 的 `<script>` 引用**
+
+在复制后的 JSP 的 `<head>` 区域硬编码添加个性化 JS 的引用：
+
+```jsp
+<%-- 示例：在复制后的 AccountOfAdmdivRealFundForm.jsp 中添加个性化 JS --%>
+<html>
+<head>
+    <title>财政国库资金实有资金账户维护</title>
+    <!-- ExtJS -->
+    <link rel="stylesheet" type="text/css" href="resources/css/ext-all.css">
+    <script type="text/javascript" src="resources/js/ext-all-min.js"></script>
+    <script type="text/javascript" src="resources/js/AccountOfAdmdivRealFund.js"></script>
+    <script type="text/javascript" src="js/util/PageUtil.js"></script>
+    <%-- ↓↓↓ 新增：手动添加的个性化 JS 引用 ↓↓↓ --%>
+    <script type="text/javascript" src="<%=path%>/RCU_js/AccountOfAdmdivRealFundFormCustom.js"></script>
+    <%-- ↑↑↑ 新增：手动添加的个性化 JS 引用 ↑↑↑ --%>
+</head>
+<!-- ... 其余内容不变 ... -->
+</html>
+```
+
+**参考示例**：可以查看项目中已有的覆盖文件作为参考。例如 `rcc/src/main/webapp/WEB-INF/views/AccountOfAdmdivRealFundForm.jsp` 就是 `pb-3.4.9` 框架原始 JSP 的复制版，在复制版中添加了 `RCU_js/AccountOfAdmdivRealFundFormCustom.js` 的个性化引用。
+
+#### 2.8.5 引用 scripts.jsp 的 JSP 清单
+
+以下 JSP 支持通过 REF_JS 加载个性化 JS（引用了 scripts.jsp）：
+
+| 模块 | JSP 文件 |
+|------|----------|
+| luzhou | `UnityVoucherQueryForm.jsp`、`LZUnityHaiNanRPVoucherForm.jsp`、`LZUnityRefundInputVoucherForm.jsp`、`LZUnityBatchPayVoucherTransferForm.jsp`、`UnityPLTransferCashNoReqMonNoTrans.jsp` |
+| rcc | `RCUZeroAcctBalanceForm.jsp`、`RCUUnityRefundInputVoucherForm.jsp`、`UnityCheckVoucherForm.jsp` |
+| boc | `BOCInnerAccount.jsp`、`BOCRefundInputVoucherForm.jsp`、`UnityPLTransferCashNoReqMonNoTrans.jsp`、`UnityBatchPayVoucherByFileForm.jsp`、`UnityHaiNanRPVoucherByFileForm.jsp` |
+| sccommon | `PaybackVoucher.jsp`、`SCRealAccountManage.jsp`、`HNRealAccountManage.jsp`、`AcctTransSerialSend.jsp`、`QueryPaybackVoucher.jsp`、`QueryCheckAmtVoucherByPBC.jsp`、`AcctTransSerialQuery.jsp`、`check2519Query.jsp`、`BankAccountCheck.jsp` |
+
+#### 2.8.6 故障排查
+
+个性化 JS 不加载时，按以下顺序排查：
+
+1. **页面对应的 JSP 是否包含 `scripts.jsp`** → 没有 → 采用 2.8.4 节的"复制 JSP + 硬编码"方式
+2. **页面 URL 是否经过 `doGo.do`** → 查看浏览器地址栏是否为 `/realware/doGo.do?description=...&id=...`
+3. **菜单 ID 是否有效** → 查询 `GAP_MENU` 表确认 `id` 存在
+4. **菜单是否关联了模块** → 查询 `GAP_MENU.module_id` 是否有值
+5. **模块的 REF_JS 是否已配置** → 查询 `GAP_MODULE.ref_js` 是否有值
+6. **JS 文件是否存在** → 确认静态资源目录下存在 `${ref_js}.js` 文件
+
+
 ## 3. 数据库配置规范
 
 ### 3.1 配置表关系
@@ -406,6 +572,28 @@ BUTTON_ID字段是按钮配置的关键字段，个性化JavaScript中的方法�
 | VALUE | VARCHAR2(200) | 比较值 |
 | ALIAS | VARCHAR2(50) | 属性别名 |
 | DATATYPE | NUMBER(1) | 数据类型 |
+
+### 3.7 PB_AUTO_TASK表结构
+
+| 字段名 | 数据类型 | 说明 |
+|--------|----------|------|
+| JOB_ID | VARCHAR2(40) | 任务编号，主键，GUID格式存储 |
+| JOB_NAME | VARCHAR2(40) | 任务名称 |
+| JOB_TYPE | NUMBER(1) | 任务类型：1-间隔执行，2-定时执行，3-线程执行 |
+| CLASS_NAME | VARCHAR2(100) | 任务类名（包含完整包路径+类名） |
+| JOB_ENABLE | NUMBER(1) | 是否启用：1-启用，0-不启用 |
+| JOB_TIME | VARCHAR2(60) | 触发时间，格式：[秒] [分] [小时] [日] [月] [周] [年]（Cron表达式） |
+| JOB_INTERVAL | VARCHAR2(60) | 间隔时间 |
+| REPEATCOUNT | NUMBER(10) | 重复任务的次数 |
+| DELAYTIME | VARCHAR2(10) | 延迟执行的时间 |
+| REMARK | VARCHAR2(255) | 任务备注说明 |
+| EXE_TYPE | NUMBER(1) | 执行类型：1-单机执行（同一库只有一台机器执行），2-多机执行 |
+| LAST_OP_DATE | VARCHAR2(20) | 最后执行日期 |
+| IS_CUR_EXE | NUMBER(1) | 是否当前正在执行（针对单机执行的任务） |
+| MAX_EXE_TIME | NUMBER(4) | 最大超时时间（单位：分钟） |
+| PARAMETER | VARCHAR2(2000) | 自动任务参数 |
+
+JOB_NAME字段应使用有意义的英文名称，建议以Auto开头。CLASS_NAME字段必须与Java实现类的全限定路径保持一致。JOB_TYPE字段为任务触发方式的关键标识。
 
 ## 4. 代码模板
 
@@ -909,7 +1097,48 @@ INSERT INTO PB_STATUS_CONDITION (
 );
 ```
 
-### 5.6 事务提交
+### 5.6 PB_AUTO_TASK INSERT模板
+
+```sql
+-- 自动任务配置
+INSERT INTO PB_AUTO_TASK (
+    JOB_ID, JOB_NAME, JOB_TYPE, CLASS_NAME, JOB_ENABLE,
+    JOB_TIME, JOB_INTERVAL, REPEATCOUNT, DELAYTIME,
+    REMARK, EXE_TYPE, LAST_OP_DATE, IS_CUR_EXE,
+    MAX_EXE_TIME, PARAMETER
+) VALUES (
+    '${JOB_ID}', '${JOB_NAME}', ${JOB_TYPE}, '${CLASS_NAME}', ${JOB_ENABLE},
+    '${JOB_TIME}', '${JOB_INTERVAL}', ${REPEATCOUNT}, '${DELAYTIME}',
+    '${REMARK}', ${EXE_TYPE}, NULL, 0,
+    ${MAX_EXE_TIME}, '${PARAMETER}'
+);
+```
+
+**示例**（定时发送退汇短信提醒任务）：
+```sql
+INSERT INTO PB_AUTO_TASK (
+    JOB_ID, JOB_NAME, JOB_TYPE, CLASS_NAME, JOB_ENABLE,
+    JOB_TIME, JOB_INTERVAL, REPEATCOUNT, DELAYTIME,
+    REMARK, EXE_TYPE, LAST_OP_DATE, IS_CUR_EXE,
+    MAX_EXE_TIME, PARAMETER
+) VALUES (
+    '894AC15848494E3C9D406BA840555C67', 'AutoSendSmsForRefund', 2, 'grp.pb.branch.luzhou.job.AutoSendSmsForRefund', 0,
+    '0 0 11 * * ?', '0', 0, '0',
+    '查询账户退汇短信提醒任务', 1, NULL, 0,
+    5, NULL
+);
+```
+
+**字段说明**：
+- **JOB_ID**：GUID格式，可使用在线GUID生成器生成
+- **JOB_TYPE**：1=间隔执行（通过JOB_INTERVAL控制次数），2=定时执行（使用Cron表达式），3=线程执行
+- **JOB_TIME**：Cron表达式格式 `[秒] [分] [小时] [日] [月] [周] [年]`，用于定时执行的任务
+- **JOB_ENABLE**：初始状态建议设为0（不启用），待测试通过后再启用
+- **EXE_TYPE**：1=单机执行（同一数据库只有一台机器执行），2=多机执行
+- **MAX_EXE_TIME**：最大超时时间，单位为分钟，防止任务长时间运行
+- **PARAMETER**：可选参数，多个参数使用特殊分隔符连接
+
+### 5.7 事务提交
 
 所有相关的INSERT语句执行完毕后，统一提交事务：
 
@@ -1030,15 +1259,39 @@ ${JSP_NAME}.url = /WEB-INF/${JSP_DIR}/${JSP_NAME}.jsp
 
 **第一步：任务基本信息**
 
-用户需要提供任务名称、任务描述、Cron表达式等信息。
+用户需要提供任务名称、任务描述、任务类型（间隔/定时/线程）、是否启用等信息。
 
-**第二步：任务实现类信息**
+**第二步：任务触发配置**
+
+根据任务类型配置相应的触发参数：
+- 定时任务（JOB_TYPE=2）：提供Cron表达式格式的触发时间
+- 间隔任务（JOB_TYPE=1）：提供间隔时间和重复次数
+- 线程任务（JOB_TYPE=3）：提供延迟时间等配置
+
+同时配置执行类型（单机/多机）、最大超时时间等参数。
+
+**第三步：任务实现类信息**
 
 用户需要提供Java实现类的包名、类名等信息。系统根据版本类型生成对应的Job代码模板。
 
-**第三步：SQL脚本生成**
+**第四步：SQL脚本生成**
 
-系统生成PB_SYS_AUTO_TASK表的INSERT语句，以及完整的Java实现类代码。
+系统生成PB_AUTO_TASK表的INSERT语句，包含：
+- JOB_ID（GUID格式）
+- JOB_NAME（任务名称）
+- JOB_TYPE（任务类型）
+- CLASS_NAME（任务类全限定路径）
+- JOB_ENABLE（初始建议为0）
+- JOB_TIME（触发时间，定时任务必须）
+- JOB_INTERVAL（间隔时间，间隔任务必须）
+- REPEATCOUNT（重复次数）
+- DELAYTIME（延迟时间）
+- REMARK（任务说明）
+- EXE_TYPE（执行类型）
+- MAX_EXE_TIME（最大超时时间）
+- PARAMETER（可选参数）
+
+同时生成完整的Java实现类代码。
 
 ## 7. 命名规范
 
@@ -1163,7 +1416,11 @@ E. 其他定制开发
 
 **JavaScript不加载问题**
 
-如果个性化JavaScript文件没有被加载，可能的原因包括：REF_JS配置路径不正确、JavaScript文件不存在、JavaScript文件语法错误等。
+如果个性化JavaScript文件没有被加载，可能的原因包括：
+- **JSP未引用 scripts.jsp** → 账户维护等页面不支持 REF_JS 机制，需采用"复制JSP+硬编码"方式（详见 2.8.4 节）
+- REF_JS配置路径不正确
+- JavaScript文件不存在
+- JavaScript文件语法错误
 
 **Controller注入失败**
 
