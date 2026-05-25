@@ -1,0 +1,3 @@
+display_name: PB 需求文档
+short_description: 生成 PB 开发前 PRD，记录需求、影响范围和验证方式。
+default_prompt: 帮我把这个 PbServer/PB 需求整理成 PRD，保存到 docs/requirement/YYYY-MM-DD-需求名称-prd.md，只写需求、涉及文件和验证方式，不写代码实现逻辑。

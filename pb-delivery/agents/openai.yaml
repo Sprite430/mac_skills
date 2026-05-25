@@ -1,0 +1,3 @@
+display_name: PB 交付助手
+short_description: 为 PB 2.x/3.x 生成 doc、code/realware、database、config 交付包。
+default_prompt: 帮我为这个 PbServer/PB 需求生成交付包，先识别 PB 版本和交付形态，再输出 deliveries/YYYY-MM-DD_需求名称/roundN/，其中 readme 放 doc/，现场覆盖文件放 code/realware/。
