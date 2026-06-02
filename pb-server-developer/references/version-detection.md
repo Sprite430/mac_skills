@@ -19,6 +19,14 @@
 
 ## 识别规则
 
+先判断是否属于 PB/PbServer 范围。出现以下特征时，通常不属于本 skill：
+
+- 项目是独立工具、迁移工具、命令行工具或脚本工程。
+- 没有 `realware/`、PB Controller/Service 包结构、`GAP_MODULE`/`PB_SYS_BUTTON`/`PB_AUTO_TASK` 等业务配置迹象。
+- 用户需求与 PB 页面、代理银行、国库集中支付业务无关。
+
+非 PB 项目不要继续套用 2.x/3.x 页面、realware、GAP 表或 PB 自动任务规则，除非用户明确要求。
+
 出现以下多个特征时，通常是 2.x：
 
 - `realware/`

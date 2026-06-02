@@ -1,6 +1,6 @@
 ---
 name: pb-server-developer
-description: 用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x 产品化项目和基于产品化代码的地区个性化项目开发。Use when adding buttons to existing JSP/ExtJS pages, adding backend Controller/Service/DAO APIs, creating new pages, creating auto tasks/jobs, adding system parameters, adding yml/properties/xml configuration parameters, generating SQL for GAP_MODULE/GAP_MENU/PB_SYS_BUTTON/PB_AUTO_TASK/PB_SYS_PARAM-style tables, and safely referencing source_code_lib or PB product baseline projects without modifying them.
+description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x 产品化主线项目和基于产品化代码的地区个性化项目开发。Use only when the target is a PB/PbServer product or personalized project and the task involves JSP/ExtJS pages, Controller/Service/DAO APIs, new pages, auto tasks/jobs, system parameters, yml/properties/xml configuration, GAP_MODULE/GAP_MENU/PB_SYS_BUTTON/PB_AUTO_TASK/PB_SYS_PARAM-style SQL, or source_code_lib/product baseline reference. Do not use for unrelated Java/tool projects such as OracleMigrateTool unless the user explicitly says to apply PB development rules.
 ---
 
 # PbServer 开发助手
@@ -10,16 +10,34 @@ description: 用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x 产�
 ## 强制规则
 
 1. 用户没有明确说“开始编码”“开始编写”“开始修改”或等价直接命令时，不得修改代码。
-2. 编码前必须完整理解需求、识别场景、查找当前项目已有实现、查找产品化或 `source_code_lib/` 参考实现。
-3. 所有 `source_code_lib/` 目录只读，只能参考，不能修改。
-4. 2.x/3.x 产品化基线项目默认只读，除非用户明确要求修改产品化代码。
-5. 对 `.java`、`.js`、`.jsp`、`.yml`、`.properties`、`.xml`、`.sh` 的真实新增/修改代码块，必须使用当前文件类型的注释语法添加成对 AI 标记：
+2. 编码前必须先做项目适用性判断；非 PB/PbServer 项目不要套用本 skill 的页面、GAP 表、realware、PB 自动任务规则。
+3. 编码前必须完整理解需求、识别场景、查找当前项目已有实现、查找产品化或 `source_code_lib/` 参考实现。
+4. 所有 `source_code_lib/` 目录只读，只能参考，不能修改。
+5. 2.x/3.x 产品化基线项目默认只读；如果用户明确把产品化主线项目指定为目标项目，可以按产品化开发任务处理。
+6. 对 `.java`、`.js`、`.jsp`、`.yml`、`.properties`、`.xml`、`.sh` 的真实新增/修改代码块，必须使用当前文件类型的注释语法添加成对 AI 标记：
    - 开始：`@AI-Begin <ID5> <DATE8> @@Codex`
    - 结束：`@AI-End <ID5> <DATE8> @@Codex`
    - `<ID5>` 是同一文件内不重复的 5 位大写字母/数字组合。
    - `<DATE8>` 是北京时间 `yyyyMMdd`。
-6. 所有新增代码都要有有用注释，解释意图、边界或关键业务逻辑，不写重复表面语义的注释。
-7. 保留用户已有改动，不回滚无关文件。
+7. 所有新增代码都要有有用注释，解释意图、边界或关键业务逻辑，不写重复表面语义的注释。
+8. 保留用户已有改动，不回滚无关文件。
+
+## 项目适用性判断
+
+先判断目标项目是否属于本 skill：
+
+| 项目类型 | 是否使用本 skill | 处理方式 |
+|---|---|---|
+| PB 2.x/3.x 产品化主线项目 | 是 | 用户明确指定为目标时可开发；否则默认作为参考 |
+| 基于 PB 2.x/3.x 的省份/银行个性化项目 | 是 | 按版本和场景规则开发 |
+| 当前项目含 `realware/`、`GAP_MODULE`、`PB_SYS_BUTTON`、`PB_AUTO_TASK`、PB Controller/Service 结构 | 是 | 继续识别 2.x/3.x 和场景 |
+| 普通 Java 工具项目、迁移工具、脚本工具、非 PB Web 项目 | 否 | 不使用本 skill，改用普通项目开发方式 |
+| 用户明确要求“在该工具项目中也按 PB 规则处理” | 谨慎使用 | 只使用用户指定的部分规则，并说明风险 |
+
+示例：
+
+- `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication` 是产品化主线工作区；如果用户明确要求修改主线，可以作为目标项目。
+- `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient/trunk/yunwei/OracleMigrateTool` 是工具项目；默认不要套用 PB 页面、realware、GAP 表或 PB 自动任务规则。
 
 ## 已知代码库
 
@@ -27,21 +45,24 @@ description: 用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x 产�
 
 | 角色 | 版本 | 路径 | 默认策略 |
 |---|---:|---|---|
-| 3.x 产品化基线 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication/pb` | 默认只参考 |
+| 3.x 产品化主线工作区 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication` | 用户明确指定时可作为目标 |
+| 3.x 产品化模块 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication/pb` | 未指定为目标时默认只参考 |
 | 2.x 产品化基线 | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/PB2.1.0(build20210918)` | 默认只参考 |
 | 四川 3.x 个性化项目 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/electronic/ProxyBank/ProxyBankV2/customize/sichuan/SiChuanApplication` | 被选中时可修改 |
 | 四川 2.x 个性化项目 | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient_BankCustom/trunk/SiChuan/SiChuan_Server_Maven_Unity` | 被选中时可修改 |
+| 运维迁移工具示例 | 非 PB 工具 | `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient/trunk/yunwei/OracleMigrateTool` | 默认不使用本 skill |
 
 ## 启动流程
 
 1. 确认目标项目路径；如果不清楚，询问用户要操作哪个已知代码库。
-2. 按 `references/version-detection.md` 判断 2.x/3.x 和产品化/个性化类型。
-3. 从下面的场景表中选择一个主场景。
-4. 读取 `references/common-rules.md` 和对应场景文件。
-5. 先在目标项目查同类实现，再查 `source_code_lib/` 或匹配版本的产品化基线。
-6. 总结可能修改的文件和仍不确定的问题；如果用户还没有明确允许编码，停下来请求确认。
-7. 获得允许后，只修改目标项目中与本次需求相关的文件。
-8. 使用最小有效方式验证：编译/测试、定向 grep、SQL 自查或页面加载链路检查。
+2. 先做项目适用性判断；非 PB/PbServer 项目直接退出本 skill。
+3. 按 `references/version-detection.md` 判断 2.x/3.x 和产品化/个性化类型。
+4. 从下面的场景表中选择一个主场景。
+5. 读取 `references/common-rules.md` 和对应场景文件。
+6. 先在目标项目查同类实现，再查 `source_code_lib/` 或匹配版本的产品化基线。
+7. 总结可能修改的文件和仍不确定的问题；如果用户还没有明确允许编码，停下来请求确认。
+8. 获得允许后，只修改目标项目中与本次需求相关的文件。
+9. 使用最小有效方式验证：编译/测试、定向 grep、SQL 自查或页面加载链路检查。
 
 ## 场景路由
 

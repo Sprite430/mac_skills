@@ -1,6 +1,6 @@
 ---
 name: pb-requirement
-description: 用于 PbServer/国库集中支付/PB 2.x/3.x 开发前或需求沟通完毕后生成 PRD/需求文档。Use when the user says pb-prd、pb-requirement、生成需求文档、整理需求、需求沟通完毕、开发前记录需求，输出 docs/requirement/YYYY-MM-DD-<需求名称>-prd.md。文档只写自然语言需求、涉及文件/影响范围、最终验证方式，不写具体代码逻辑。
+description: 用于 PbServer/国库集中支付/PB 2.x/3.x 开发前或需求沟通完毕后生成 PRD/需求文档。Use when the user explicitly says pb-prd or pb-requirement; also use for PB/PbServer projects when the user says 生成需求文档、整理需求、需求沟通完毕、开发前记录需求。输出 docs/requirement/YYYY-MM-DD-<需求名称>-prd.md。文档只写自然语言需求、涉及文件/影响范围、最终验证方式，不写具体代码逻辑。For non-PB tool projects, use only when explicitly invoked and write a generic PRD without PB-specific assumptions.
 ---
 
 # PB 需求文档助手
@@ -14,7 +14,17 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 开发前或需求沟
 3. 文件保存到 `docs/requirement/YYYY-MM-DD-<需求名称>-prd.md`。
 4. 需求文档只描述“要做什么、涉及哪些文件/范围、最终如何验证”，不要写具体代码实现逻辑。
 5. 如果用户信息不完整，先补问缺失项；不要凭空编造业务细节。
-6. 如果用户已经提供足够信息，直接生成文档。
+6. 如果是非 PB 工具项目，不要强行写 PB 页面、GAP 表、realware、PB 自动任务等内容。
+7. 如果用户已经提供足够信息，直接生成文档。
+
+## 项目适用性
+
+本 skill 可以用于 PB 项目，也可以在用户明确调用 `pb-prd`/`pb-requirement` 时用于普通工具项目。
+
+- PB/PbServer 项目：影响范围可包含页面、JS、Controller、Service、DAO、SQL、系统参数、自动任务等 PB 类型。
+- 产品化主线项目：按产品化需求记录，说明是否影响产品通用能力。
+- 地区个性化项目：说明地区/银行范围和是否依赖产品化逻辑。
+- 普通工具项目，例如 `OracleMigrateTool`：按普通项目记录模块、命令、配置、输入输出、脚本、测试数据，不要套用 PB 页面和 realware 术语。
 
 ## 和其他 Skill 的配合
 
@@ -28,7 +38,7 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 开发前或需求沟
 
 1. 需求名称：用于标题和文件名。
 2. 自然语言需求：描述用户希望系统支持什么能力、在哪个业务场景使用。
-3. 涉及文件或影响范围：页面、JS、Controller、Service、DAO、配置、SQL、自动任务、系统参数、数据库表等；不知道具体文件时写“待开发时确认”。
+3. 涉及文件或影响范围：PB 项目可写页面、JS、Controller、Service、DAO、配置、SQL、自动任务、系统参数、数据库表等；普通工具项目写模块、命令入口、配置、输入输出、脚本、测试数据等；不知道具体文件时写“待开发时确认”。
 4. 最终验证方式：从业务结果角度描述如何确认需求完成。
 
 可选确认：
@@ -37,6 +47,7 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 开发前或需求沟
 - 所属模块/银行/地区。
 - 是否需要兼容 2.x 或 3.x。
 - 是否涉及新增按钮、后端接口、新页面、自动任务、系统参数、配置文件参数。
+- 非 PB 项目是否仍需要沿用 PB PRD 文件命名和目录。
 
 ## 输出文档结构
 
@@ -58,6 +69,7 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 开发前或需求沟
 | 数据库/SQL |  |  |
 | 配置/参数 |  |  |
 | 自动任务 |  |  |
+| 普通工具/脚本 |  |  |
 
 不存在或暂不涉及的类型可以写“无”。不确定的文件写“待开发时确认”。
 

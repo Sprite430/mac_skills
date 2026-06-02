@@ -1,6 +1,6 @@
 ---
 name: pb-delivery
-description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试完成后生成交付包。Use when the user says pb-delivery、开始交付、生成交付、开发完成、测试完成、打交付包。按 PB 版本和交付形态生成 deliveries/YYYY-MM-DD_需求名称/roundN/，包含 doc/readme.md、code/realware 现场覆盖包、database SQL、config 外部配置；支持 2.x realware、3.x jar 源码交付、3.x realware/信创 Web 包交付。
+description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试完成后生成交付包。Use when the user explicitly says pb-delivery; also use for PB/PbServer projects when the user says 开始交付、生成交付、开发完成、测试完成、打交付包。按 PB 版本和交付形态生成 deliveries/YYYY-MM-DD_需求名称/roundN/，包含 doc/readme.md、code/realware 现场覆盖包、database SQL、config 外部配置；支持 2.x realware、3.x jar 源码交付、3.x realware/信创 Web 包交付。For non-PB tool projects such as OracleMigrateTool, use only when explicitly invoked and generate a generic doc/code/database/config package without realware mapping.
 ---
 
 # PB 交付助手
@@ -13,9 +13,10 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试
 2. 输出必须使用中文。
 3. 优先读取 `docs/requirement/*-prd.md` 中与需求名称匹配的 PRD。
 4. 必须分开判断“PB 版本”和“交付形态”：3.x 既可能是 jar 源码交付，也可能是 realware/信创 Web 包交付。
-5. `code/` 默认放项目部署现场可覆盖的包路径，不是简单源码归档。
+5. PB realware 交付时，`code/` 默认放项目部署现场可覆盖的包路径，不是简单源码归档。
 6. 自动收集变更后，必须让用户确认是否遗漏文件、是否有未纳入版本控制的新增文件。
 7. 不要把 `source_code_lib/` 或产品化参考代码复制进交付包，除非用户明确要求。
+8. 非 PB 工具项目不要创建 `code/realware`，除非用户明确要求按 PB 现场覆盖包交付。
 
 ## 和其他 Skill 的配合
 
@@ -25,7 +26,7 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试
 
 ## 交付目录结构
 
-固定输出到目标项目下：
+PB realware 交付固定输出到目标项目下：
 
 ```text
 deliveries/
@@ -49,9 +50,32 @@ deliveries/
 
 不要默认创建独立 `classes/` 目录；class 文件作为现场覆盖包的一部分放入 `code/realware/WEB-INF/classes/...`。只有用户明确要求“单独 class 目录”时，才额外创建。
 
+普通工具项目交付使用通用结构：
+
+```text
+deliveries/
+  YYYY-MM-DD_需求名称/
+    roundN/
+      doc/
+        readme.md
+      code/
+      database/
+      config/
+```
+
+普通工具项目的 `code/` 保持项目相对路径，例如 `code/src/main/java/...`、`code/scripts/...`、`code/pom.xml`，不要映射成 `realware`。
+
 ## 识别顺序
 
-### 第一步：识别 PB 版本
+### 第一步：判断是否 PB 项目
+
+属于 PB/PbServer 项目时继续识别版本和交付形态。普通工具项目、迁移工具、命令行工具默认走“普通工具项目交付”，例如：
+
+- `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient/trunk/yunwei/OracleMigrateTool`
+
+如果用户没有明确调用 `pb-delivery` 或没有要求使用 PB 交付目录，非 PB 项目不要套用本 skill。
+
+### 第二步：识别 PB 版本
 
 2.x 常见特征：
 
@@ -69,7 +93,7 @@ deliveries/
 - 模块下有 `src/main/webapp/WEB-INF/views` 或 `viewscustom`
 - `target/` 下可能生成 `.jar`、`.war`，也可能生成展开的 Web 包目录
 
-### 第二步：识别交付形态
+### 第三步：识别交付形态
 
 realware 现场覆盖包：
 
@@ -140,6 +164,20 @@ realware 现场覆盖包：
 
 jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明“由开发人员/部署人员按项目构建流程编译 jar”。
 
+### 普通工具项目交付
+
+适用于非 PB 的工具、迁移程序、命令行程序或脚本工程。
+
+| 来源文件 | 交付路径 | 说明 |
+|---|---|---|
+| `src/...` | `code/src/...` | 源码 |
+| `pom.xml`、`build.gradle` | `code/pom.xml`、`code/build.gradle` | 构建文件 |
+| `scripts/...`、`bin/...` | `code/scripts/...`、`code/bin/...` | 脚本 |
+| `*.properties`、`*.yml`、`*.xml` | `config/...` 或 `code/...` | 外部配置放 config，项目内配置按相对路径放 code |
+| SQL | `database/001_xxx.sql` | 数据库脚本 |
+
+普通工具项目 `doc/readme.md` 必须说明运行入口、运行参数、配置文件、输入输出、验证命令和回滚方式。
+
 ## 变更文件识别
 
 按顺序检测：
@@ -153,7 +191,8 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 1. 自动检测到的变更文件是否完整？
 2. 是否有未纳入版本控制的新增文件、SQL、class、JSP、JS 或配置文件需要加入？
 3. 本次是第几轮交付，默认 `round1`。
-4. 如果是 3.x，确认交付形态：realware/信创 Web 包交付，还是 jar 源码交付。
+4. 如果是 PB 3.x，确认交付形态：realware/信创 Web 包交付，还是 jar 源码交付。
+5. 如果是普通工具项目，确认是否使用通用交付结构，且不要生成 `code/realware`。
 
 ## doc/readme.md 内容
 
@@ -166,8 +205,9 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 - 交付轮次：roundN
 - 交付日期：
 - 目标项目：
-- PB 版本：2.x/3.x
-- 交付形态：realware 现场覆盖包 / 3.x jar 源码交付
+- 项目类型：PB/PbServer / 普通工具项目
+- PB 版本：2.x/3.x/不适用
+- 交付形态：realware 现场覆盖包 / 3.x jar 源码交付 / 普通工具项目交付
 - 关联 PRD：
 
 ## 需求说明
@@ -179,6 +219,7 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 | 类别 | 交付文件 | 现场覆盖路径/用途 |
 |---|---|---|
 | 现场覆盖包 | code/realware/... | realware/... |
+| 工具源码 | code/... | 普通工具项目源码/脚本 |
 | 数据库 | database/... | 执行 SQL |
 | 配置 | config/... | 外部配置或人工核对 |
 
@@ -201,8 +242,9 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 2. 按需先执行 `database/` 中 SQL。
 3. realware 交付时，将 `code/realware/` 下文件覆盖到现场 `realware/` 对应路径。
 4. jar 源码交付时，由开发人员/部署人员按项目构建流程编译 jar，再按现场发布流程部署。
-5. 按需处理 `config/` 中外部配置。
-6. 重启应用或刷新缓存，按项目要求执行。
+5. 普通工具项目交付时，按 readme 中运行入口和构建命令部署或执行。
+6. 按需处理 `config/` 中外部配置。
+7. 重启应用、刷新缓存或重新执行工具，按项目要求执行。
 
 ## 回滚建议
 
@@ -219,15 +261,17 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 
 1. 确认目标项目路径、需求名称和交付轮次。
 2. 读取匹配 PRD；没有 PRD 时询问是否补充需求说明。
-3. 判断 PB 版本：2.x 或 3.x。
-4. 判断交付形态：realware 现场覆盖包、3.x realware/信创 Web 包、或 3.x jar 源码交付。
-5. 用版本控制自动识别变更文件。
-6. 如果是 realware 交付，将源码变更映射到最终部署产物：JS/JSP/配置/class 优先从实际部署目录或 `target/<展开包名>/` 获取。
-7. 让用户确认遗漏文件和未纳管文件。
-8. 创建 `deliveries/YYYY-MM-DD_<需求名称>/roundN/`。
-9. 按文件归类复制到 `doc/`、`code/`、`database/`、`config/`。
-10. 生成 `doc/readme.md`。
-11. 回复交付目录、文件数量、待人工确认事项。
+3. 判断项目类型：PB/PbServer 或普通工具项目。
+4. PB 项目继续判断版本：2.x 或 3.x。
+5. 判断交付形态：realware 现场覆盖包、3.x realware/信创 Web 包、3.x jar 源码交付，或普通工具项目交付。
+6. 用版本控制自动识别变更文件。
+7. 如果是 realware 交付，将源码变更映射到最终部署产物：JS/JSP/配置/class 优先从实际部署目录或 `target/<展开包名>/` 获取。
+8. 如果是普通工具项目，保持项目相对路径，不做 realware 映射。
+9. 让用户确认遗漏文件和未纳管文件。
+10. 创建 `deliveries/YYYY-MM-DD_<需求名称>/roundN/`。
+11. 按文件归类复制到 `doc/`、`code/`、`database/`、`config/`。
+12. 生成 `doc/readme.md`。
+13. 回复交付目录、文件数量、待人工确认事项。
 
 ## 命名规则
 
