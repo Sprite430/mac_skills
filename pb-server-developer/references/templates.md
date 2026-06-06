@@ -7,6 +7,8 @@
 - 2.x Service XML 形态
 - 3.x Service 形态
 - SQL 骨架
+- 状态/列配置模板
+- 页面数据加载模板
 
 ## 2.x Controller 形态
 
@@ -89,3 +91,11 @@ VALUES ('${JSP_NAME}', '${BUTTON_ID}', '${BUTTON_NAME}', 1, '${ICON}', ${CUSTOM}
 INSERT INTO PB_AUTO_TASK (JOB_ID, JOB_NAME, JOB_TYPE, CLASS_NAME, JOB_ENABLE, JOB_TIME, JOB_INTERVAL, EXE_TYPE, MAX_EXE_TIME, PARAMETER, REMARK)
 VALUES ('${JOB_ID}', '${JOB_NAME}', ${JOB_TYPE}, '${CLASS_NAME}', 0, '${JOB_TIME}', '${JOB_INTERVAL}', ${EXE_TYPE}, ${MAX_EXE_TIME}, '${PARAMETER}', '${REMARK}');
 ```
+
+## 状态/列配置模板
+
+已有 MVC 页面新增状态、挂页面、配列的可复制模板见 [sql-status-column-template.md](sql-status-column-template.md)。
+
+## 页面数据加载模板
+
+`loadXXX.do` 的通用直连查询模板见 [page-data-load-template.md](page-data-load-template.md)。

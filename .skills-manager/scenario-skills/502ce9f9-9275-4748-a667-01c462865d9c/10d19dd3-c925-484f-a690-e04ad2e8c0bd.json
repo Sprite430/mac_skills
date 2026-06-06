@@ -7,6 +7,7 @@
     "claude_code": false,
     "codex": false,
     "cursor": false,
+    "hermes": true,
     "trae_cn": true
   }
 }

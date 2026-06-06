@@ -6,6 +6,7 @@
 - 必查项
 - 2.x 写法
 - 3.x 写法
+- 安全与白名单分流
 - 实施清单
 - 验证方式
 
@@ -42,6 +43,17 @@ rg -n "interface .*Service|ServiceImpl|daoSupport|queryFor|update\\(" src */src/
 - Service 通常使用 `@Service`。
 - 代码必须放到正确模块包下，不要写到兄弟银行模块。
 - 如果本地 Controller 习惯使用方法级完整路径映射，继续沿用。
+
+
+## 安全与白名单分流
+
+新增或修改后端接口时，如果接口涉及以下内容，除本文件外还要读取 `scenario-file-gateway-security.md`：
+
+- 上传、下载、导入、导出、临时文件访问。
+- 免登录访问、外部系统回调、银行/财政主动回调。
+- 3.x `gateway`、`pb.ignore-urls`、`file-interceptor.*.urls`、`authority-interceptor.urls`。
+
+2.x 项目通常没有 3.x gateway/file-interceptor yml 链路，不要为了新增接口凭空增加这类配置；应以 `springmvc-servlet.xml` 和现有拦截器写法为准。
 
 ## 实施清单
 

@@ -6,6 +6,7 @@
 - 识别规则
 - 2.x 结构
 - 3.x 结构
+- 上传下载与网关差异
 - 参考代码查找顺序
 
 ## 已知路径
@@ -89,6 +90,15 @@ source_code_lib/
 - Service 通常使用 `@Service`。
 - Java 包、resources、JSP 都应落在正确模块内，避免写到兄弟银行模块。
 - 个性化 JSP 覆盖通常放 `viewscustom/`，但最终跟随目标模块既有习惯。
+
+
+## 上传下载与网关差异
+
+处理上传、下载、免登录或安全白名单时必须先分版本判断：
+
+- 3.x 常见独立 `gateway` 模块、`pb.ignore-urls`、`file-interceptor.download.urls`、`file-interceptor.upload.urls`、`SecurityInterceptor`、`AuthorityInterceptor` 等配置链路。
+- 2.x 产品化基线通常没有独立 gateway 模块，也没有 3.x 的 `file-interceptor` yml 白名单；更多依赖 `springmvc-servlet.xml` 中的 `MyInterceptor`、`AuthorityInterceptor`、`SecurityInterceptor` 和具体 Controller/工具类。
+- 因此“gateway 白名单 / file-interceptor 白名单”规则只在目标项目实际存在这些配置时使用；2.x 不要硬套 3.x yml 配置。
 
 ## 参考代码查找顺序
 
