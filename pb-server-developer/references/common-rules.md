@@ -54,26 +54,26 @@
 Java/JavaScript/JSP 脚本示例：
 
 ```java
-// @AI-Begin A1B2C 20260525 @@Claude
+// @AI-Begin A1B2C 20260525 Claude
 // 说明该业务分支存在的原因。
 doSomething();
-// @AI-End A1B2C 20260525 @@Claude
+// @AI-End A1B2C 20260525 Claude
 ```
 
 XML/JSP 标签示例：
 
 ```xml
-<!-- @AI-Begin A1B2C 20260525 @@Claude -->
+<!-- @AI-Begin A1B2C 20260525 Claude -->
 <bean id="exampleService" class="grp.pb.branch.ExampleServiceImpl"/>
-<!-- @AI-End A1B2C 20260525 @@Claude -->
+<!-- @AI-End A1B2C 20260525 Claude -->
 ```
 
 Properties/YAML/shell 示例：
 
 ```properties
-# @AI-Begin A1B2C 20260525 @@Claude
+# @AI-Begin A1B2C 20260525 Claude
 example.enabled=true
-# @AI-End A1B2C 20260525 @@Claude
+# @AI-End A1B2C 20260525 Claude
 ```
 
 规则：
