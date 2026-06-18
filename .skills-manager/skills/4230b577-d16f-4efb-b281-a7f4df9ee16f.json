@@ -8,7 +8,7 @@
   "source": {
     "type": "skillssh",
     "ref": "mattpocock/skills/caveman",
-    "subpath": "skills/productivity/caveman",
+    "subpath": "skills",
     "branch": null
   }
 }
