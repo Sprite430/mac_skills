@@ -1,6 +1,6 @@
 ---
 name: db-connect
-description: 扫描项目数据库配置文件，自动连接 omnidb-mcp
+description: 扫描项目数据库配置，智能路由 Oracle→oracle-db-helper / MySQL/PG→mcp-database-server
 author: zhangchengke
 triggers:
   - 连接数据库
@@ -10,20 +10,23 @@ triggers:
   - setup database
 ---
 
-# db-connect — 项目数据库自动连接
+# db-connect — 项目数据库自动连接（双引擎）
 
-自动扫描当前项目的数据库配置文件，解析连接信息，通过 omnidb-mcp 的 `connect` 工具建立数据库连接。
+自动扫描当前项目的数据库配置文件，解析连接信息，按引擎类型智能路由：
 
-## 使用场景
-
-- 进入一个项目后，需要连接该项目数据库进行查询或更新
-- 项目已有 `application.yml`、`.env` 等配置，不想手动填连接参数
-- 不确定项目用的什么数据库、连的哪台机器
+```
+扫描配置 → 识别引擎 ──→ Oracle  → oracle-db-handler（run_query.sh）
+                    ──→ MySQL   → mcp-database-server MCP
+                    ──→ PG      → mcp-database-server MCP
+```
 
 ## 前置条件
 
-- omnidb-mcp 已注册为 `database` MCP server（已全局配置好）
-- 当前项目目录下有可识别的数据库配置文件
+| 引擎 | 依赖 | 状态 |
+|------|------|------|
+| Oracle | `oracle-db-handler` 技能 + Docker `oracle-21c-local` | 已就绪 |
+| MySQL | `mcp-database-server` MCP（全局 `database`） | 已就绪 |
+| PostgreSQL | `mcp-database-server` MCP（全局 `database`） | 已就绪 |
 
 ---
 
@@ -31,38 +34,54 @@ triggers:
 
 ### 第 1 步：定位项目根目录
 
-通过以下方式确定项目根目录（按优先级）：
-
 ```
 1. Git 根目录：git rev-parse --show-toplevel
-2. SVN 根目录：svn info --show-item wc-root
+2. SVN 根目录：svn info --show-item wc-root  
 3. 当前工作目录
 ```
 
 ### 第 2 步：扫描配置文件
 
-在项目根目录及其子目录中，按优先级扫描以下文件：
+在项目根目录及其子目录中，按优先级扫描：
 
 | 优先级 | 文件 | 说明 |
 |--------|------|------|
-| 1 | `db-config.json` | 项目专属的 omnidb-mcp 配置 |
-| 2 | `application.yml` / `application-*.yml` | Spring Boot 配置 |
-| 3 | `application.properties` | Spring Boot 配置 |
-| 4 | `.env` / `.env.local` / `.env.development` | 环境变量文件 |
+| 1 | `db-config.json` | 项目专属数据库配置 |
+| 2 | `application.yml` / `application-*.yml` | Spring Boot / PB 项目 |
+| 3 | `application.properties` | Spring Boot |
+| 4 | `.env` / `.env.local` | 环境变量 |
 | 5 | `src/main/resources/application*.yml` | Java 项目标准路径 |
 | 6 | `src/main/resources/application*.properties` | Java 项目标准路径 |
-| 7 | `config/database.yml` | 常见自定义路径 |
+| 7 | `config/database.yml` | 自定义路径 |
 
-扫描命令示例：
+扫描命令：
 ```bash
-find . -maxdepth 4 \( -name "db-config.json" -o -name "application*.yml" -o -name "application*.properties" -o -name ".env*" -o -name "database.yml" \) 2>/dev/null | head -20
+find . -maxdepth 4 \( -name "db-config.json" -o -name "application*.yml" -o -name "application*.properties" -o -name ".env*" \) 2>/dev/null | grep -v target | head -20
 ```
 
 ### 第 3 步：解析配置
 
-根据文件类型解析数据库连接信息：
+**application.yml — PB 项目格式（datasource 在顶层）**：
+```yaml
+datasource:
+  url: jdbc:oracle:thin:@172.16.101.111:1521:orcl
+  username: GUANGXI_XINGYE_33_LJT_221202
+  password: 1
+  driver: oracle.jdbc.driver.OracleDriver
+```
+→ 从 `datasource.url` / `datasource.username` / `datasource.password` / `datasource.driver` 提取。
 
-**db-config.json（omnidb-mcp 原生格式）**：
+**application.yml — 标准 Spring Boot 格式**：
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: app
+    password: secret
+```
+→ 从 `spring.datasource.url` 等提取。
+
+**db-config.json**：
 ```json
 {
   "connections": [{
@@ -78,98 +97,127 @@ find . -maxdepth 4 \( -name "db-config.json" -o -name "application*.yml" -o -nam
 ```
 → 直接提取，无需转换。
 
-**application.yml（Spring Boot 格式）**：
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/mydb
-    username: app
-    password: secret
-    # 或
-    driver-class-name: com.mysql.cj.jdbc.Driver
-```
-→ 从 `url` 解析 engine/host/port/database，提取 username/password。
-
-**application.properties**：
-```properties
-spring.datasource.url=jdbc:mysql://10.0.0.1:3306/mydb?useSSL=false
-spring.datasource.username=root
-spring.datasource.password=secret
-```
-→ 同上，从 JDBC URL 解析。
-
-**.env 文件**：
-```bash
-DB_ENGINE=postgresql
-DB_HOST=localhost
-DB_PORT=5432
-DB_DATABASE=myapp
-DB_USERNAME=postgres
-DB_PASSWORD=secret
-# 或
-DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
-```
-→ 识别 `DB_*`、`DATABASE_*`、`MCP_DB_*`、`DATABASE_URL` 变量。
-
 ### 第 4 步：识别引擎类型
-
-从以下信息推断数据库引擎：
 
 | 来源 | 匹配规则 | 引擎 |
 |------|---------|------|
+| JDBC URL | `jdbc:oracle:thin:@` | **oracle** |
+| JDBC URL | `jdbc:oracle:oci:@` | **oracle** |
 | JDBC URL | `jdbc:mysql://` | mysql |
 | JDBC URL | `jdbc:postgresql://` | postgresql |
-| JDBC URL | `jdbc:oracle:` | oracle |
-| JDBC URL | `jdbc:sqlserver://` | mssql |
-| JDBC URL | `jdbc:sqlite:` | sqlite |
-| driver-class-name | `com.mysql.cj.jdbc.Driver` | mysql |
-| driver-class-name | `org.postgresql.Driver` | postgresql |
-| driver-class-name | `oracle.jdbc.OracleDriver` | oracle |
-| DB_ENGINE | `mysql/postgresql/oracle/...` | 直接使用 |
+| JDBC URL | `jdbc:dm://` | 达梦（暂不支持，提示用户） |
+| JDBC URL | `jdbc:db2://` | DB2（暂不支持，提示用户） |
+| driver | `oracle.jdbc.driver.OracleDriver` | **oracle** |
+| driver | `oracle.jdbc.OracleDriver` | **oracle** |
+| driver | `com.mysql.cj.jdbc.Driver` | mysql |
+| driver | `org.postgresql.Driver` | postgresql |
+| DB_ENGINE 环境变量 | `oracle/mysql/postgresql` | 直接使用 |
 
-### 第 5 步：处理缺失信息
+### 第 5 步：引擎路由（核心）
 
-如果解析后有缺失字段，**不要猜测**，向用户展示：
+根据识别的引擎类型，走不同的连接路径：
+
+---
+
+#### 🔴 Oracle 路径 → oracle-db-handler
+
+**适用场景**：国库集中支付系统、PB 项目、ProxyBank 项目。
+
+**操作流程**：
+
+1. 检查 oracle-db-handler 技能环境：
+   ```bash
+   ls /Users/zhangchengke/zzz_skills/oracle-db-handler/run_query.sh
+   ```
+
+2. 如果项目根目录存在 `db-config.json` 且有 Oracle 连接 → 直接提取连接信息。
+   如果是从 `application.yml` 解析的 → 向用户展示解析结果并确认：
+
+   ```
+   📋 从 application.yml 解析到 Oracle 连接：
+   
+     host     : 172.16.101.111
+     port     : 1521
+     database : orcl
+     username : GUANGXI_XINGYE_33_LJT_221202
+     password : 1
+   
+   使用 oracle-db-handler 连接。是否继续？
+   ```
+
+3. 调起 oracle-db-handler 技能，告知用户：
+   ```
+   已切换到 oracle-db-handler。
+   你可以直接执行 SQL 查询，例如：
+   - "查一下 PB_PAY_VOUCHER 表有多少条"
+   - "desc PB_PAY_VOUCHER"
+   - "select * from PB_PAY_VOUCHER where rownum <= 10"
+   ```
+
+**注意**：oracle-db-handler 依赖 Docker 容器 `oracle-21c-local`。如果容器未运行，提示用户启动。
+
+---
+
+#### 🟢 MySQL / PostgreSQL 路径 → mcp-database-server
+
+**操作流程**：
+
+1. 组装连接参数，调用 MCP 工具 `connect_database`：
+   ```
+   MCP tool: mcp__database__connect_database
+   参数:
+     type: "mysql" 或 "postgresql"
+     name: "<project-name>-db"
+     host: "<parsed>"
+     port: <parsed>
+     database: "<parsed>"
+     user: "<parsed>"
+     password: "<parsed>"
+   ```
+
+2. 验证连接：调用 `test_connection`
+3. 展示可用的表：调用 `list_connections`
+
+**连接信息展示**：
+```
+✓ 已连接 MySQL 10.0.0.1:3306/mydb
+  可用工具: execute_query, list_connections, test_connection, close_connection
+```
+
+---
+
+### 第 6 步：处理缺失信息
+
+如果解析后有缺失字段，向用户展示：
 
 ```
 已从 application.yml 解析到以下连接信息：
 
-  engine   : postgresql       ✓
-  host     : localhost         ✓
-  port     : 5432              ✓
-  database : myapp             ✓
-  username : app               ✓
-  password : ???               ✗ 未找到
+  engine   : oracle          ✓
+  host     : 172.16.101.111  ✓
+  port     : 1521             ✓
+  database : orcl             ✓
+  username : GUANGXI_XINGYE  ✓
+  password : ???              ✗ 未找到
 
-密码未在配置文件中找到。请提供以下缺失信息：
-  - password: ______
-
-（或提供完整连接串: postgresql://app:PASSWORD@localhost:5432/myapp）
+密码未在配置文件中。请提供密码。
 ```
 
-### 第 6 步：建立连接
+### 第 7 步：多模块项目
 
-信息完整后，调用 omnidb-mcp 的 `connect` 工具：
+如果项目有多个模块（如 GuangXi 下有 xingye/bbw/guilin 等），：
 
-```
-MCP tool: mcp__database__connect
-参数:
-  connection_id: "<project-name>-db"
-  engine: "postgresql"
-  host: "localhost"
-  port: 5432
-  database: "myapp"
-  username: "app"
-  password: "<from config>"
-```
-
-### 第 7 步：验证连接
-
-连接后调用 `ping` 确认连通，然后调用 `list_tables` 展示可用的表，让用户确认连接正确。
+1. 扫描所有模块的 `application.yml`
+2. 列出所有找到的数据库配置让用户选择：
 
 ```
-✓ 连接成功！数据库版本: PostgreSQL 14.5
-  可用表 (前 10 个): users, orders, products, ...
+发现 3 个模块的数据库配置：
+
+  1. xingye  → oracle 172.16.101.111:1521:orcl
+  2. bbw     → oracle 172.16.101.111:1521:orcl  
+  3. guilin  → oracle 172.16.101.111:1521:orcl
+
+要连接哪个？
 ```
 
 ---
@@ -178,13 +226,13 @@ MCP tool: mcp__database__connect
 
 | 场景 | 处理方式 |
 |------|---------|
-| 找不到任何配置文件 | 列出支持的配置方式，提供手动输入或创建 `db-config.json` 的选项 |
-| 配置文件存在但无数据库信息 | 说明该文件不包含数据库配置，继续扫描下一优先级 |
-| JDBC URL 解析失败 | 显示原始 URL，请求用户手动确认各项参数 |
-| 引擎类型无法识别 | 列出常见选项让用户选择 |
-| 连接被拒绝 | 检查 host/port 是否正确，提示检查网络/VPN |
-| 认证失败 | 提示检查 username/password，询问是否重试 |
-| MCP server 未运行 | 提示运行 `claude mcp list` 检查 database server 状态 |
+| 找不到配置文件 | 列出支持的配置方式，提供手动输入或创建 `db-config.json` 模板 |
+| 引擎是达梦/DB2 | 告知暂不支持，建议手动连接 |
+| Oracle 路径：Docker 未运行 | 提示 `docker start oracle-21c-local` |
+| Oracle 路径：run_query.sh 无权限 | `chmod +x run_query.sh` |
+| MySQL/PG：连接被拒 | 检查 host/port/VPN |
+| MySQL/PG：认证失败 | 提示检查 username/password |
+| MySQL/PG：MCP 未运行 | `claude mcp list` 检查 database server |
 
 ---
 
@@ -192,23 +240,21 @@ MCP tool: mcp__database__connect
 
 ```
 用户: 连库
-→ 扫描项目配置 → 从 application.yml 解析 → 自动连接 → 显示表列表
+→ 扫描到 application.yml → 识别为 Oracle → 切到 oracle-db-handler → 可查询
 
 用户: db connect
-→ 扫描到多个配置文件 → 让用户选择用哪个 → 解析 → 连接
+→ 扫描到 .env → 识别为 MySQL → 调用 connect_database → 展示表列表
 
-用户: 连接数据库
-→ 找不到配置文件 → 列出选项：
-  1. 手动输入连接信息
-  2. 创建 db-config.json 模板
-  3. 设置 .env 环境变量
+用户: 连接数据库  
+→ 多模块项目 → 列出 xingye/bbw/guilin → 用户选 xingye → 连接
 ```
 
 ---
 
 ## 注意事项
 
-- 密码等敏感信息不会记录到对话历史中
-- 每次新会话需要重新运行此 skill 来建立连接
-- 如果项目有多个数据源配置，会列出所有让用户选择
-- 优先使用 `db-config.json`，因为它是 omnidb-mcp 原生格式，无需转换
+- 密码等敏感信息不记录到对话历史
+- 每次新会话需重新运行此 skill
+- 多模块项目会让用户选择具体模块
+- Oracle 走 oracle-db-handler（Docker 内连接，不走 MCP）
+- MySQL/PG 走 mcp-database-server MCP 协议
