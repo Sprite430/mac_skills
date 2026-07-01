@@ -26,9 +26,28 @@ run_sql() {
     local sql="$2"
     local mode="${3:-query}"   # query | update | desc
 
+    # @AI-Begin Q7K2P 20260701 Claude
+    # 规范化 SQL 尾部：MCP 传入的 SQL 往往不带分号，若直接与 EXIT 换行拼接，
+    # sqlplus 会把 EXIT 并入未终结的 SQL 语句，触发 ORA-00933。
+    # 处理：去掉尾部空白/换行与已有分号，再统一补一个分号，
+    # 保证 SQL 独立终结、EXIT 单独成行。desc 模式是 sqlplus 命令，不做处理。
+    local sql_norm="$sql"
+    if [ "$mode" = "query" ] || [ "$mode" = "update" ]; then
+        # 去除尾部空白与换行
+        sql_norm="${sql_norm%"${sql_norm##*[![:space:]]}"}"
+        # 去除尾部已有的分号（可能多个），每次去分号后再清一次尾部空白
+        while [ "${sql_norm: -1}" = ";" ]; do
+            sql_norm="${sql_norm%;}"
+            sql_norm="${sql_norm%"${sql_norm##*[![:space:]]}"}"
+        done
+        sql_norm="${sql_norm};"
+    fi
+    # @AI-End Q7K2P 20260701 Claude
+
     local sqlplus_cmd
     case "$mode" in
         query)
+            # @AI-Begin Q7K3P 20260701 Claude
             sqlplus_cmd="SET PAGESIZE 50000
 SET LINESIZE 2000
 SET FEEDBACK OFF
@@ -37,15 +56,18 @@ SET TRIMSPOOL ON
 SET TRIMOUT ON
 SET UNDERLINE OFF
 SET COLSEP ' | '
-$sql
+$sql_norm
 EXIT;"
+            # @AI-End Q7K3P 20260701 Claude
             ;;
         update)
+            # @AI-Begin Q7K4P 20260701 Claude
             sqlplus_cmd="SET FEEDBACK ON
 SET HEADING OFF
-$sql
+$sql_norm
 COMMIT;
 EXIT;"
+            # @AI-End Q7K4P 20260701 Claude
             ;;
         desc)
             sqlplus_cmd="SET LINESIZE 2000
