@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "9d20f8b3-16c9-4689-811d-f7fae78eb4b9",
+  "path": "init-codegraph",
+  "path_key": "init-codegraph",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
