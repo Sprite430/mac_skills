@@ -66,6 +66,12 @@ find . -maxdepth 3 -type d -name "target" 2>/dev/null | head -5
 find . -maxdepth 3 -type d -name "build" 2>/dev/null | head -5
 # 检查 node_modules/
 find . -maxdepth 3 -type d -name "node_modules" 2>/dev/null | head -3
+# 检查 logs/（应用日志）
+find . -maxdepth 3 -type d -name "logs" 2>/dev/null | head -5
+# 检查 deliveries/（交付包目录）
+find . -maxdepth 3 -type d -name "deliveries" 2>/dev/null | head -5
+# 检查 docs/（文档目录，可能含 .java/.js 源码片段）
+find . -maxdepth 3 -type d -name "docs" 2>/dev/null | head -5
 ```
 
 **1.4 软链接指向外部目录（关键！）**
@@ -94,7 +100,8 @@ ls -la source_code_lib/ 2>/dev/null
 - 构建工具：Maven / Gradle / 无
 - 编译产物目录：target/ (xxx 文件) / build/ (xxx 文件)
 - ⚠️ 软链接：source_code_lib/pb-x.x.x-sources → /外部路径 (xxx 文件)
-- 建议排除项：[列表]
+- 其他可排除目录：logs/（xxx 文件）、deliveries/（xxx 文件）、docs/（xxx 文件）
+- 建议排除项：[列表，含上述所有目录]
 
 即将生成配置：
 - .gitignore
@@ -125,6 +132,18 @@ source_code_lib/
 
 # Node 依赖（如有）
 **/node_modules/
+
+# 应用日志
+logs/
+**/logs/
+
+# 交付包目录
+deliveries/
+**/deliveries/
+
+# 文档目录
+docs/
+**/docs/
 ```
 
 **3.2 创建/更新 `codegraph.json`**
@@ -135,7 +154,10 @@ source_code_lib/
     "**/target/**",
     "**/build/**",
     "**/.svn/**",
-    "source_code_lib/**"
+    "source_code_lib/**",
+    "**/logs/**",
+    "**/deliveries/**",
+    "**/docs/**"
   ]
 }
 ```
