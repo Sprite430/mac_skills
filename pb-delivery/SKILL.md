@@ -31,7 +31,7 @@ PB realware 交付固定输出到目标项目下：
 ```text
 deliveries/
   YYYY-MM-DD_需求名称/
-    roundN/
+    roundN-YYYY-MM-DD/
       doc/
         readme.md
       code/
@@ -55,7 +55,7 @@ deliveries/
 ```text
 deliveries/
   YYYY-MM-DD_需求名称/
-    roundN/
+    roundN-YYYY-MM-DD/
       doc/
         readme.md
       code/
@@ -202,7 +202,7 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 ## 基本信息
 
 - 需求名称：
-- 交付轮次：roundN
+- 交付轮次：roundN-YYYY-MM-DD
 - 交付日期：
 - 目标项目：
 - 项目类型：PB/PbServer / 普通工具项目
@@ -277,5 +277,5 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 
 - 日期格式：`YYYY-MM-DD`。
 - 需求目录：`YYYY-MM-DD_需求名称`。
-- 轮次目录：`round1`、`round2`、`round3`。
+- 轮次目录：`round1-YYYY-MM-DD`、`round2-YYYY-MM-DD`、`round3-YYYY-MM-DD`。
 - SQL 建议加执行顺序前缀：`001_xxx.sql`、`002_xxx.sql`。
