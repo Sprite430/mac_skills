@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "e0b13efa-92da-4993-8c3f-8d7fae7726d8",
+  "path": "a-stock-data",
+  "path_key": "a-stock-data",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "simonlin1212/a-stock-data/a-stock-data",
+    "subpath": null,
+    "branch": null
+  }
+}
