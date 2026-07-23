@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "7728c0b6-19aa-4015-a36b-0545c2f844f1",
+  "path": "partial-javac-compile",
+  "path_key": "partial-javac-compile",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
