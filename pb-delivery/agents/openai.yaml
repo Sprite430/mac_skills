@@ -1,3 +1,5 @@
 display_name: PB 交付助手
-short_description: 为 PB 2.x/3.x 或明确指定的工具项目生成交付包。
-default_prompt: 帮我生成交付包。请先判断项目是否 PB/PbServer，再识别 PB 版本和交付形态；PB realware 交付输出 code/realware，普通工具项目不要套 realware。
+# @AI-Begin P7D2K 20260723 Claude
+short_description: 按现场路径交付 PB 编译/打包产物，源码仅按明确要求附加。
+default_prompt: 帮我生成交付包。默认只交付匹配现场目录的 class、JSP、JS、配置、SQL、jar/war 等最终产物；只有我明确要求源码时才加入 code/source。
+# @AI-End P7D2K 20260723 Claude
