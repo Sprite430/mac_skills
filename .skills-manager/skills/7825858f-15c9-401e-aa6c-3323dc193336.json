@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "7825858f-15c9-401e-aa6c-3323dc193336",
+  "path": "ij-debugger",
+  "path_key": "ij-debugger",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
