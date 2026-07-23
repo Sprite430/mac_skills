@@ -1,0 +1,5 @@
+display_name: Maven 定向局部 javac 编译
+# @AI-Begin K4N8R 20260723 Claude
+short_description: 编译增量 Java 并生成可交付 class。
+default_prompt: 使用 $partial-javac-compile 编译本次新增或修改的生产 Java，输出独立临时 class；不要执行全量构建或修改无关冲突代码。
+# @AI-End K4N8R 20260723 Claude

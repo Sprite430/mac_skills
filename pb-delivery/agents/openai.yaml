@@ -1,5 +1,5 @@
 display_name: PB 交付助手
-# @AI-Begin P7D2K 20260723 Claude
-short_description: 按现场路径交付 PB 编译/打包产物，源码仅按明确要求附加。
-default_prompt: 帮我生成交付包。默认只交付匹配现场目录的 class、JSP、JS、配置、SQL、jar/war 等最终产物；只有我明确要求源码时才加入 code/source。
-# @AI-End P7D2K 20260723 Claude
+# @AI-Begin H8M4Q 20260723 Claude
+short_description: 默认编译并交付 PB 增量文件，全量包使用用户提供路径。
+default_prompt: 帮我生成交付包。未提供全量包时，默认只编译新增/修改 Java，并直接映射 JS、JSP、配置、SQL 等增量文件；只有我明确给出路径时才交付全量包。
+# @AI-End H8M4Q 20260723 Claude
