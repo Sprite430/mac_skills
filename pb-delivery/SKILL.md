@@ -1,6 +1,6 @@
 ---
 name: pb-delivery
-description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试完成后生成交付包。Use when the user explicitly says pb-delivery; also use for PB/PbServer projects when the user says 开始交付、生成交付、开发完成、测试完成、打交付包。按 PB 版本和交付形态生成 deliveries/YYYY-MM-DD_需求名称/roundN/，包含 doc/readme.md、code/realware 现场覆盖包、database SQL、config 外部配置；支持 2.x realware、3.x jar 源码交付、3.x realware/信创 Web 包交付。For non-PB tool projects such as OracleMigrateTool, use only when explicitly invoked and generate a generic doc/code/database/config package without realware mapping.
+description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试完成后生成交付包。Use when the user explicitly says pb-delivery; also use for PB/PbServer projects when the user says 开始交付、生成交付、开发完成、测试完成、打交付包。按 PB 版本和交付形态生成 deliveries/YYYY-MM-DD_需求名称/roundN-YYYY-MM-DD/，包含 doc/readme.md、doc/manifest.sha256、code/realware 现场覆盖包、database SQL、config 外部配置；支持 2.x realware、3.x jar 源码交付、3.x realware/信创 Web 包交付。For non-PB tool projects such as OracleMigrateTool, use only when explicitly invoked and generate a generic doc/code/database/config package without realware mapping.
 ---
 
 # PB 交付助手
@@ -17,12 +17,16 @@ description: 用于 PbServer/国库集中支付/PB 2.x/3.x 需求开发和测试
 6. 自动收集变更后，必须让用户确认是否遗漏文件、是否有未纳入版本控制的新增文件。
 7. 不要把 `source_code_lib/` 或产品化参考代码复制进交付包，除非用户明确要求。
 8. 非 PB 工具项目不要创建 `code/realware`，除非用户明确要求按 PB 现场覆盖包交付。
+9. 自动收集变更前必须确定版本控制基线，并分开处理新增、修改、删除和重命名；删除文件不能静默忽略。
+10. 交付 `.class` 前必须确认最终部署产物来自当前交付基线的已验证构建，并收集该源码生成的主类、内部类和匿名类文件。
+11. 复制配置前必须检查密码、密钥、token、证书、环境地址等敏感信息；没有用户明确确认时，不交付真实敏感值。
+12. 文件收集完成后必须生成 `doc/manifest.sha256`，用于核验 `code/`、`database/`、`config/` 中交付文件的完整性。
 
 ## 和其他 Skill 的配合
 
 - `pb-requirement` 生成 `docs/requirement/YYYY-MM-DD-<需求名称>-prd.md`。
 - `pb-server-developer` 完成开发和验证。
-- 本 skill 在最后生成 `deliveries/YYYY-MM-DD_<需求名称>/roundN/`。
+- 本 skill 在最后生成 `deliveries/YYYY-MM-DD_<需求名称>/roundN-YYYY-MM-DD/`。
 
 ## 交付目录结构
 
@@ -34,6 +38,7 @@ deliveries/
     roundN-YYYY-MM-DD/
       doc/
         readme.md
+        manifest.sha256
       code/
         realware/
           ...
@@ -44,6 +49,7 @@ deliveries/
 目录含义：
 
 - `doc/readme.md`：说明文档，包含需求说明、变更清单、测试方案、测试范围、部署更新方式、回滚建议。
+- `doc/manifest.sha256`：`code/`、`database/`、`config/` 下交付文件的 SHA-256 清单。
 - `code/`：现场覆盖包。默认保持现场部署相对路径，例如 `code/realware/RCU_js/xxx.js`、`code/realware/WEB-INF/classes/grp/.../Xxx.class`。
 - `database/`：SQL 脚本、数据库初始化或变更脚本。
 - `config/`：不直接覆盖到 realware 的外部配置、部署说明配置、环境差异配置。若配置文件本身在现场 `realware/WEB-INF/classes/` 下覆盖，应同时或优先放入 `code/realware/WEB-INF/classes/...`。
@@ -58,6 +64,7 @@ deliveries/
     roundN-YYYY-MM-DD/
       doc/
         readme.md
+        manifest.sha256
       code/
       database/
       config/
@@ -148,7 +155,8 @@ realware 现场覆盖包：
 
 - 3.x realware 包不要简单交付 `<module>/src/main/resources/static/...`，应优先交付编译/打包后的现场路径。
 - 如果只修改了 JS/JSP，可只交付对应 `code/realware/...` 文件。
-- 如果修改了 Java，通常需要交付编译后的 `.class`，路径必须来自最终 Web 包的 `WEB-INF/classes/...`。
+- 如果修改了 Java，通常需要交付编译后的 `.class`，路径必须来自最终 Web 包的 `WEB-INF/classes/...`。同一源码生成的主类、内部类和匿名类必须一起检查并交付，例如 `Xxx.class` 和 `Xxx$*.class`，不能只复制主类。
+- 不要仅凭文件修改时间判断产物是否最新。必须记录构建命令、构建结果、构建时间、JDK 版本和产物来源目录，并确认构建基线与交付基线一致。
 - 不要默认交付整个 `WEB-INF/lib`，除非本次确实新增或升级依赖 jar。
 
 ### 3.x jar 源码交付
@@ -180,11 +188,20 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 
 ## 变更文件识别
 
+先确定“从哪个版本到当前版本”的比较基线，再检测工作区变更。基线优先使用用户指定的 commit、tag、branch 或 SVN revision；用户未指定时，可使用当前分支的 upstream merge-base。无法可靠确定时，必须让用户确认，不能自行猜测。
+
 按顺序检测：
 
-1. Git：存在 `.git` 时使用 `git status --porcelain` 和必要的 `git diff --name-status`。
-2. SVN：存在 `.svn` 时使用 `svn status`。
+1. Git：使用 `git status --porcelain`，并分别检查 `<base>...HEAD`、暂存区、未暂存区和未跟踪文件，避免只收集其中一层变更。
+2. SVN：使用 `svn info` 记录仓库地址和 revision，使用 `svn status` 检查工作区；需要比较历史范围时使用用户确认的起止 revision。
 3. 都不存在时，要求用户手动提供变更文件清单。
+
+按变更类型处理：
+
+- 新增/修改：按交付形态映射并复制实际文件。
+- 删除：文件已不存在，不复制；必须在 `doc/readme.md` 的删除清单、部署步骤和回滚步骤中写明现场删除路径。
+- 重命名：复制新路径，同时在 readme 写明旧路径删除和新路径新增，避免现场残留两份文件。
+- 冲突、无法解释的大量修改或非本次需求改动：暂停收集，先向用户报告风险和文件清单。
 
 自动检测后必须询问：
 
@@ -193,6 +210,32 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 3. 本次是第几轮交付，默认 `round1`。
 4. 如果是 PB 3.x，确认交付形态：realware/信创 Web 包交付，还是 jar 源码交付。
 5. 如果是普通工具项目，确认是否使用通用交付结构，且不要生成 `code/realware`。
+6. 比较基线是否正确，删除和重命名清单是否完整？
+
+## 构建产物与配置安全
+
+PB realware 交付包含 `.class` 时：
+
+1. 确认开发和测试已经完成，存在成功的构建或局部编译证据。
+2. 确认产物来自本次目标项目和本次交付基线，不从其他项目或旧包拼接。
+3. 从最终展开 Web 包的 `WEB-INF/classes/` 收集产物；局部编译场景也必须包含同一源码生成的全部相关 `.class`。
+4. 在 readme 记录构建命令、JDK、结果、时间和最终产物目录；无法证明来源时暂停交付并让用户确认。
+
+复制 `.properties`、`.yml`、`.yaml`、`.xml`、证书或其他环境配置前：
+
+1. 检查密码、私钥、secret、token、access key、证书口令、生产地址等敏感值。
+2. 能模板化的配置使用占位符，并在 readme 说明由现场填写；不能模板化且必须交付真实值时，先获得用户明确确认。
+3. 不在回复、日志或 readme 中回显真实敏感值，只记录文件路径和处理方式。
+
+## 完整性清单
+
+完成文件复制后，在轮次目录内生成 SHA-256 清单：
+
+```bash
+find code database config -type f -exec shasum -a 256 {} \; | LC_ALL=C sort > doc/manifest.sha256
+```
+
+生成后使用 `shasum -a 256 -c doc/manifest.sha256` 校验，必须全部通过。若环境使用 `sha256sum`，可使用等价命令，但 readme 中应写明实际生成和校验命令。
 
 ## doc/readme.md 内容
 
@@ -209,6 +252,7 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 - PB 版本：2.x/3.x/不适用
 - 交付形态：realware 现场覆盖包 / 3.x jar 源码交付 / 普通工具项目交付
 - 关联 PRD：
+- 完整性清单：doc/manifest.sha256
 
 ## 需求说明
 
@@ -223,6 +267,13 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 | 数据库 | database/... | 执行 SQL |
 | 配置 | config/... | 外部配置或人工核对 |
 
+## 删除与重命名清单
+
+| 类型 | 原路径 | 新路径/处理方式 |
+|---|---|---|
+| 删除 |  | 现场删除并在回滚时恢复备份 |
+| 重命名 |  | 删除旧路径并部署新路径 |
+
 ## 测试方案
 
 说明测试入口、测试数据、正常场景、异常场景和回归范围。
@@ -236,15 +287,32 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 - 自动任务：
 - 回归影响：
 
+## 构建与验证记录
+
+- 构建/编译命令：
+- 构建结果：
+- 构建时间：
+- JDK/运行环境：
+- 最终产物来源目录：
+- SHA-256 校验结果：
+
+## 敏感配置处理
+
+- 检查范围：
+- 脱敏/模板化文件：
+- 经用户确认保留真实值的文件：只记录路径，不记录具体值
+
 ## 部署更新方式
 
 1. 备份现场待覆盖文件。
 2. 按需先执行 `database/` 中 SQL。
-3. realware 交付时，将 `code/realware/` 下文件覆盖到现场 `realware/` 对应路径。
-4. jar 源码交付时，由开发人员/部署人员按项目构建流程编译 jar，再按现场发布流程部署。
-5. 普通工具项目交付时，按 readme 中运行入口和构建命令部署或执行。
-6. 按需处理 `config/` 中外部配置。
-7. 重启应用、刷新缓存或重新执行工具，按项目要求执行。
+3. 按删除与重命名清单处理旧路径，执行前再次确认备份完整。
+4. realware 交付时，将 `code/realware/` 下文件覆盖到现场 `realware/` 对应路径。
+5. jar 源码交付时，由开发人员/部署人员按项目构建流程编译 jar，再按现场发布流程部署。
+6. 普通工具项目交付时，按 readme 中运行入口和构建命令部署或执行。
+7. 按需处理 `config/` 中外部配置，不直接覆盖未确认的环境敏感值。
+8. 使用 `doc/manifest.sha256` 核验文件完整性。
+9. 重启应用、刷新缓存或重新执行工具，按项目要求执行。
 
 ## 回滚建议
 
@@ -253,8 +321,9 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 ## 版本控制基线
 
 - 工具：Git/SVN/手工
-- 基线：
-- 当前：
+- 基线 commit/tag/branch/revision：
+- 当前 commit/revision：
+- 工作区状态：干净/包含已确认的未提交变更
 ```
 
 ## 工作流程
@@ -264,14 +333,17 @@ jar 源码交付不默认复制 `target/*.jar`。`doc/readme.md` 中必须写明
 3. 判断项目类型：PB/PbServer 或普通工具项目。
 4. PB 项目继续判断版本：2.x 或 3.x。
 5. 判断交付形态：realware 现场覆盖包、3.x realware/信创 Web 包、3.x jar 源码交付，或普通工具项目交付。
-6. 用版本控制自动识别变更文件。
-7. 如果是 realware 交付，将源码变更映射到最终部署产物：JS/JSP/配置/class 优先从实际部署目录或 `target/<展开包名>/` 获取。
-8. 如果是普通工具项目，保持项目相对路径，不做 realware 映射。
-9. 让用户确认遗漏文件和未纳管文件。
-10. 创建 `deliveries/YYYY-MM-DD_<需求名称>/roundN/`。
-11. 按文件归类复制到 `doc/`、`code/`、`database/`、`config/`。
-12. 生成 `doc/readme.md`。
-13. 回复交付目录、文件数量、待人工确认事项。
+6. 确认版本控制基线，用版本控制识别已提交、暂存、未暂存、未跟踪和删除/重命名文件。
+7. 让用户确认基线、遗漏文件、未纳管文件和删除/重命名清单。
+8. 如果是 realware 交付，将源码变更映射到最终部署产物：JS/JSP/配置/class 优先从实际部署目录或 `target/<展开包名>/` 获取。
+9. 如果包含 `.class`，核对构建证据和全部相关内部类/匿名类产物。
+10. 如果是普通工具项目，保持项目相对路径，不做 realware 映射。
+11. 检查待交付配置中的敏感信息并按确认结果脱敏、模板化或保留。
+12. 创建 `deliveries/YYYY-MM-DD_<需求名称>/roundN-YYYY-MM-DD/`。
+13. 按文件归类复制到 `doc/`、`code/`、`database/`、`config/`。
+14. 生成 `doc/readme.md` 和 `doc/manifest.sha256`。
+15. 校验 SHA-256 清单，确认全部通过。
+16. 回复交付目录、文件数量、基线、验证结果和待人工确认事项。
 
 ## 命名规则
 
