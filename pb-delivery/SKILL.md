@@ -59,6 +59,7 @@ deliveries/
 
 - `doc/readme.md`：说明文档，包含需求说明、变更清单、测试方案、测试范围、部署更新方式、回滚建议。
 - `doc/manifest.sha256`：`code/`、`database/`、`config/` 下交付文件的 SHA-256 清单。清单路径相对于项目 `deliveries/` 根目录，必须从 `YYYY-MM-DD_需求名称/roundN-YYYY-MM-DD/...` 开始，不写绝对路径，也不只写 `code/...`。
+- `YYYY-MM-DD_需求名称.zip`：最终交付压缩包，压缩整个需求文件夹，位于 `deliveries/` 根目录、与需求文件夹同级，每次打完 round 包后生成并覆盖，生成时机和命令见“交付包压缩（最终步骤）”。
 - `code/`：编译/打包后的现场部署文件。默认保持现场目标目录的相对路径，例如 `code/realware/RCU_js/xxx.js`、`code/realware/WEB-INF/classes/grp/.../Xxx.class`；只有用户明确要求源码时才增加 `code/source/`。
 - `database/`：SQL 脚本、数据库初始化或变更脚本。
 - `config/`：不直接覆盖到 realware 的外部配置、部署说明配置、环境差异配置。若配置文件本身在现场 `realware/WEB-INF/classes/` 下覆盖，应同时或优先放入 `code/realware/WEB-INF/classes/...`。
@@ -430,7 +431,30 @@ test -d "$DELIVERIES_ROOT/$ROUND_REL"
 17. 按文件归类复制到 `doc/`、`code/`、`database/`、`config/`。
 18. 生成 `doc/readme.md` 和 `doc/manifest.sha256`。
 19. 校验 SHA-256 清单，确认全部通过。
-20. 回复交付目录、交付模式、部署产物数量、现场目标路径、未完成验证、是否包含源码、基线和待人工确认事项。
+20. 进入 `deliveries/` 根目录，将整个需求文件夹 `YYYY-MM-DD_<需求名称>/` 压缩为 `YYYY-MM-DD_<需求名称>.zip`；已有同名 zip 时先删除再压缩，确保覆盖为包含最新 round 的内容，命令见“交付包压缩（最终步骤）”。
+21. 回复交付目录、交付模式、部署产物数量、现场目标路径、未完成验证、是否包含源码、基线和待人工确认事项。
+
+## 交付包压缩（最终步骤）
+
+`doc/manifest.sha256` 校验全部通过后，把整个需求文件夹压缩为单个 zip，输出到 `deliveries/` 根目录、与需求文件夹同级：
+
+```text
+deliveries/
+  YYYY-MM-DD_需求名称/
+    roundN-YYYY-MM-DD/...
+  YYYY-MM-DD_需求名称.zip
+```
+
+```bash
+cd deliveries
+rm -f "YYYY-MM-DD_<需求名称>.zip"
+zip -r -q "YYYY-MM-DD_<需求名称>.zip" "YYYY-MM-DD_<需求名称>"
+unzip -l "YYYY-MM-DD_<需求名称>.zip"
+```
+
+- 必须在 `deliveries/` 根目录下执行，zip 内部路径才会从 `YYYY-MM-DD_<需求名称>/` 开始，与 `doc/manifest.sha256` 的相对路径基准一致，接收方解压后可直接按清单校验。
+- 已有同名 zip 时先 `rm -f` 删除再重新压缩，保证覆盖为包含最新 round 的内容；不要直接对旧 zip 执行 `zip -r` 追加，否则本轮已删除或替换的文件会残留在旧 zip 条目中。
+- 压缩完成后用 `unzip -l` 列出内容，确认包含最新 roundN 目录和 `doc/manifest.sha256` 后再交付。
 
 ## 命名规则
 
