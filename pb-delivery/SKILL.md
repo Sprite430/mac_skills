@@ -445,16 +445,37 @@ deliveries/
   YYYY-MM-DD_需求名称.zip
 ```
 
+**不要使用 macOS 自带 `zip` 或 `ditto` 压缩含中文的路径**：macOS 自带 zip 是 Apple 修改版 Info-ZIP 3.0，不支持 `-UN` 选项且不受 `LC_ALL` 影响，ditto 也不设置条目名 UTF-8 标志位（flag bit 0x800），中文条目名被按 cp437 解码，Windows/Linux 解压后乱码，接收方无法按 manifest 中文路径校验。必须在 `deliveries/` 根目录下用 Python 内置 zipfile 压缩：
+
 ```bash
 cd deliveries
-rm -f "YYYY-MM-DD_<需求名称>.zip"
-zip -r -q "YYYY-MM-DD_<需求名称>.zip" "YYYY-MM-DD_<需求名称>"
-unzip -l "YYYY-MM-DD_<需求名称>.zip"
+python3 - <<'PYEOF'
+import os, sys, zipfile
+
+src = "YYYY-MM-DD_<需求名称>"
+dst = src + ".zip"
+if os.path.exists(dst):
+    os.remove(dst)
+with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk(src):
+        for d in dirs:
+            p = os.path.join(root, d)
+            z.write(p, os.path.relpath(p, os.getcwd()) + "/")
+        for f in files:
+            p = os.path.join(root, f)
+            z.write(p, os.path.relpath(p, os.getcwd()))
+bad = [i.filename for i in zipfile.ZipFile(dst).infolist()
+       if any(ord(c) > 127 for c in i.filename) and not (i.flag_bits & 0x800)]
+if bad:
+    sys.exit("zip 条目缺少 UTF-8 标志: " + str(bad))
+print("zip 完成:", dst, "条目数:", len(zipfile.ZipFile(dst).infolist()))
+PYEOF
 ```
 
 - 必须在 `deliveries/` 根目录下执行，zip 内部路径才会从 `YYYY-MM-DD_<需求名称>/` 开始，与 `doc/manifest.sha256` 的相对路径基准一致，接收方解压后可直接按清单校验。
-- 已有同名 zip 时先 `rm -f` 删除再重新压缩，保证覆盖为包含最新 round 的内容；不要直接对旧 zip 执行 `zip -r` 追加，否则本轮已删除或替换的文件会残留在旧 zip 条目中。
-- 压缩完成后用 `unzip -l` 列出内容，确认包含最新 roundN 目录和 `doc/manifest.sha256` 后再交付。
+- 已有同名 zip 时脚本先删除再重新压缩，保证覆盖为包含最新 round 的内容，不会残留上一轮已删除或替换的条目。
+- Python 对含非 ASCII 字符的条目自动设置 UTF-8 标志位（0x800）；脚本末尾校验所有非 ASCII 条目都带该标志，缺失即退出，禁止交付乱码包。
+- 系统无 `python3`（未安装 Command Line Tools）时提示用户安装后重试，不要回退到会产生乱码的 `zip`/`ditto`。
 
 ## 命名规则
 
