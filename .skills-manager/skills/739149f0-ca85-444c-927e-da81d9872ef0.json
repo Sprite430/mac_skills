@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "739149f0-ca85-444c-927e-da81d9872ef0",
+  "path": "vision",
+  "path_key": "vision",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "kotot/vision/vision",
+    "subpath": "vision",
+    "branch": null
+  }
+}
