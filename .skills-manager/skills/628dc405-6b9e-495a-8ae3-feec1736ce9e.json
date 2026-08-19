@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "628dc405-6b9e-495a-8ae3-feec1736ce9e",
+  "path": "init-workspace",
+  "path_key": "init-workspace",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
