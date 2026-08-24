@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "5051f080-29b3-4549-80ac-9f6bcb984777",
+  "path": "nihaixia",
+  "path_key": "nihaixia",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "git",
+    "ref": "https://github.com/3150214587/niehaixia.git",
+    "subpath": null,
+    "branch": null
+  }
+}

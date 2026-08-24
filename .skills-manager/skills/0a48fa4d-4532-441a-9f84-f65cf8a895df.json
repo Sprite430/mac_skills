@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "0a48fa4d-4532-441a-9f84-f65cf8a895df",
+  "path": "nihaisha-perspective",
+  "path_key": "nihaisha-perspective",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "git",
+    "ref": "https://github.com/huoyalong/nihaisha-skill.git",
+    "subpath": null,
+    "branch": null
+  }
+}
