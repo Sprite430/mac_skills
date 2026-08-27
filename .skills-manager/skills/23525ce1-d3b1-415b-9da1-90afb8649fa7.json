@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "23525ce1-d3b1-415b-9da1-90afb8649fa7",
+  "path": "database-operations",
+  "path_key": "database-operations",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}

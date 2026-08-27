@@ -1,0 +1,7 @@
+interface:
+  display_name: "数据库操作"
+  short_description: "自动定位连接并通过 DataGrip 安全操作数据库"
+  default_prompt: "使用 $database-operations 处理需要真实数据库连接、结构检查、SQL 查询或数据变更的任务；先定位唯一数据源和 Schema，默认只读。"
+
+policy:
+  allow_implicit_invocation: true
