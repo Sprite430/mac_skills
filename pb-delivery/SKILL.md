@@ -61,7 +61,7 @@ deliveries/
 - `doc/readme.md`：说明文档，包含需求说明、变更清单、测试方案、测试范围、部署更新方式、回滚建议。
 - `doc/manifest.sha256`：`code/`、`database/`、`config/` 下交付文件的 SHA-256 清单。清单路径相对于项目 `deliveries/` 根目录，必须从 `YYYY-MM-DD_需求名称/roundN-YYYY-MM-DD/...` 开始，不写绝对路径，也不只写 `code/...`。
 - `YYYY-MM-DD_需求名称.zip`：最终交付压缩包，压缩整个需求文件夹，位于 `deliveries/` 根目录、与需求文件夹同级，每次打完 round 包后生成并覆盖，生成时机和命令见“交付包压缩（最终步骤）”。
-- `code/`：编译/打包后的现场部署文件。默认保持现场目标目录的相对路径，例如 `code/realware/RCU_js/xxx.js`、`code/realware/WEB-INF/classes/grp/.../Xxx.class`；只有用户明确要求源码时才增加 `code/source/`。
+- `code/`：编译/打包后的现场部署文件。默认保持现场目标目录的相对路径，例如 3.x 静态资源 `code/realware/WEB-INF/classes/static/RCU_js/xxx.js`、2.x 静态资源 `code/realware/RCU_js/xxx.js`、业务 class `code/realware/WEB-INF/classes/grp/.../Xxx.class`；只有用户明确要求源码时才增加 `code/source/`。
 - `database/`：SQL 脚本、数据库初始化或变更脚本。
 - `config/`：不直接覆盖到 realware 的外部配置、部署说明配置、环境差异配置。若配置文件本身在现场 `realware/WEB-INF/classes/` 下覆盖，应同时或优先放入 `code/realware/WEB-INF/classes/...`。
 
@@ -94,6 +94,8 @@ deliveries/
 如果用户没有明确调用 `pb-delivery` 或没有要求使用 PB 交付目录，非 PB 项目不要套用本 skill。
 
 ### 第二步：识别 PB 版本
+
+同一项目或同一轮交付可能同时包含 2.x 和 3.x 模块，必须**按模块分别判断版本和映射规则，不可混用**。典型差异：2.x 静态资源放 war 根目录（`realware/<js目录>/xxx.js`），3.x 静态资源在 classpath（`realware/WEB-INF/classes/static/<js目录>/xxx.js`）。
 
 2.x 常见特征：
 
@@ -147,6 +149,10 @@ realware 现场覆盖包：
 
 ### 3.x realware/classes 增量交付
 
+3.x 模块按现场部署形态区分：
+- **现场整体替换 jar/war**（模块打 jar 或 war 后整包替换）：直接交付完整构建产物，不需要逐个映射松散 class/JS/JSP，见「3.x jar/war 全量包交付」。
+- **现场支持松散覆盖**（class、JS、JSP 等直接覆盖到 `WEB-INF/classes/`）：按下方映射表交付。
+
 Java 使用局部编译产物；无需构建转换的 JS、JSP、报表和配置直接从本次变更文件映射到现场目录。
 
 常见映射：
@@ -155,9 +161,10 @@ Java 使用局部编译产物；无需构建转换的 JS、JSP、报表和配置
 |---|---|---|
 | `<局部输出>/grp/.../*.class` | `code/realware/WEB-INF/classes/grp/.../*.class` | 业务 class、内部类和匿名类 |
 | `<局部输出>/com/.../*.class` | `code/realware/WEB-INF/classes/com/.../*.class` | 其他包根下的业务 class |
-| `<module>/src/main/resources/static/RCU_js/xxx.js` | `code/realware/RCU_js/xxx.js` | 无转换时直接复制静态 JS |
-| `<module>/src/main/resources/static/js/xxx.js` | `code/realware/js/xxx.js` | 无转换时直接复制公共 JS |
-| `<module>/src/main/resources/static/report/xxx.report` | `code/realware/report/xxx.report` | 无转换时直接复制报表 |
+| `<module>/src/main/resources/static/RCU_js/xxx.js` | `code/realware/WEB-INF/classes/static/RCU_js/xxx.js` | 3.x 静态资源在 classpath，Spring Boot 从 `classpath:/static/` 提供 URL，必须放 `WEB-INF/classes/static/` 下，**不是 war 根目录** |
+| `<module>/src/main/resources/static/js/xxx.js` | `code/realware/WEB-INF/classes/static/js/xxx.js` | 同上，公共 JS |
+| `<module>/src/main/resources/static/report/xxx.report` | `code/realware/WEB-INF/classes/static/report/xxx.report` | 同上，报表资源 |
+| 产品化 jar 内 `META-INF/resources/static/...` | `code/realware/WEB-INF/classes/META-INF/resources/static/...` | 覆盖产品化 jar 内资源时保持相同 classpath 相对路径，`WEB-INF/classes` 优先于 `WEB-INF/lib` 中的 jar |
 | `<module>/src/main/webapp/WEB-INF/views/xxx.jsp` | `code/realware/WEB-INF/views/xxx.jsp` | JSP |
 | `<module>/src/main/webapp/WEB-INF/viewscustom/xxx.jsp` | `code/realware/WEB-INF/viewscustom/xxx.jsp` | 个性化 JSP |
 | `<module>/src/main/webapp/WEB-INF/unity_jsp/xxx.jsp` | `code/realware/WEB-INF/unity_jsp/xxx.jsp` | 定制 JSP |
