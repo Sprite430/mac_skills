@@ -84,11 +84,7 @@ find . -maxdepth 3 -type l 2>/dev/null | while read link; do
 done
 ```
 
-**1.5 未纳入版本控制的目录（SVN 项目常见）**
-```bash
-# 检查 source_code_lib/ 等目录是否独立于版本控制
-ls -la source_code_lib/ 2>/dev/null
-```
+
 
 ### 第二步：展示检测结果
 
@@ -99,7 +95,6 @@ ls -la source_code_lib/ 2>/dev/null
 - 版本控制：SVN / Git / 无
 - 构建工具：Maven / Gradle / 无
 - 编译产物目录：target/ (xxx 文件) / build/ (xxx 文件)
-- ⚠️ 软链接：source_code_lib/pb-x.x.x-sources → /外部路径 (xxx 文件)
 - 其他可排除目录：logs/（xxx 文件）、deliveries/（xxx 文件）、docs/（xxx 文件）
 - 建议排除项：[列表，含上述所有目录]
 
@@ -127,8 +122,6 @@ ls -la source_code_lib/ 2>/dev/null
 # SVN 元数据（SVN 项目）
 **/.svn/
 
-# 产品参考源码（软链接，只读）
-source_code_lib/
 
 # Node 依赖（如有）
 **/node_modules/
@@ -154,7 +147,6 @@ docs/
     "**/target/**",
     "**/build/**",
     "**/.svn/**",
-    "source_code_lib/**",
     "**/logs/**",
     "**/deliveries/**",
     "**/docs/**"
@@ -207,7 +199,7 @@ codegraph status
 
 ```
 用户：初始化 codegraph
-→ 检测到 SVN，Maven，source_code_lib/ → /外部目录（软链接）
+→ 检测到 SVN，Maven
 → 生成 .gitignore + codegraph.json
 → 清理旧索引
 → codegraph init（469 files，41 MB）
@@ -228,7 +220,7 @@ codegraph status
 
 | 问题 | 原因 | 处理 |
 |------|------|------|
-| init 卡在 Resolving refs | 软链接导致索引了外部大量文件 | Ctrl+C 停止，添加 `source_code_lib/**` 到排除列表后重建 |
+| init 卡在 Resolving refs | 软链接导致索引了外部大量文件 | Ctrl+C 停止，添加 
 | 文件数 6000+ | 软链接未排除或 target 未排除 | 检查 `.gitignore` 和 `codegraph.json` 是否都有排除规则 |
 | `database is locked` | 旧版本 CodeGraph | 升级：`codegraph upgrade` |
 | `Transport closed` | WSL2 跨文件系统问题 | 项目移到 Linux 原生文件系统，或设置 `CODEGRAPH_NO_DAEMON=1` |

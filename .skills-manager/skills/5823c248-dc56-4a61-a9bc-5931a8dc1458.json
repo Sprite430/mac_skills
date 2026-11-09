@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "5823c248-dc56-4a61-a9bc-5931a8dc1458",
+  "path": "init-pb-dependencies",
+  "path_key": "init-pb-dependencies",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "local",
+    "ref": null,
+    "subpath": null,
+    "branch": null
+  }
+}
