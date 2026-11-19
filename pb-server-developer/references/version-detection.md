@@ -14,7 +14,10 @@
 | 角色 | 版本 | 路径 |
 |---|---:|---|
 | 3.x 产品化基线 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication/pb` |
-| 2.x 产品化基线 | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/PB2.1.0(build20210918)` |
+| 3.x 完整工程（只读参考） | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/PB3.5.0(build20260818)/server` |
+| 2.x 产品化基线（当前主流） | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/Pb-2.1.1` |
+| 2.x 旧版基线 | 2.0/2.1.0 | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/`（PB2.0.0* / PB2.1.0*） |
+| 产品化源码仓库根 | 2.x/3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source`（具体版本按项目 CLAUDE.md 映射表定位） |
 | 四川 3.x 个性化项目 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/electronic/ProxyBank/ProxyBankV2/customize/sichuan/SiChuanApplication` |
 | 四川 2.x 个性化项目 | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient_BankCustom/trunk/SiChuan/SiChuan_Server_Maven_Unity` |
 
@@ -60,8 +63,9 @@ src/spring-views.properties
 src/springmvc-servlet.xml
 src/custom-context.xml
 src/*-context.xml
-source_code_lib/
 ```
+
+产品化参考源码不在项目内，按项目 CLAUDE.md「产品化依赖 ↔ 源码仓库映射」定位（init-pb-dependencies 维护）；个别老项目仍有 `source_code_lib/` 软链，存在时可直接用。
 
 规则：
 
@@ -81,8 +85,9 @@ source_code_lib/
 <module>/src/main/webapp/WEB-INF/views/
 <module>/src/main/webapp/WEB-INF/viewscustom/
 <module>/pom.xml
-source_code_lib/
 ```
+
+产品化参考源码不在项目内，按项目 CLAUDE.md「产品化依赖 ↔ 源码仓库映射」定位（init-pb-dependencies 维护）；个别老项目仍有 `source_code_lib/` 软链，存在时可直接用。
 
 规则：
 
@@ -104,9 +109,9 @@ source_code_lib/
 
 1. 目标项目同模块或同银行/地区。
 2. 目标项目兄弟模块。
-3. 目标项目 `source_code_lib/`。
+3. 项目 CLAUDE.md「产品化依赖 ↔ 源码仓库映射」中对应版本的源码目录（老项目残留的 `source_code_lib/` 作为等价来源）。
 4. 匹配版本的已知产品化基线。
 
-3.x 个性化项目中，如果本地 `source_code_lib/` 缺失或不完整，再参考 `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication/pb`。
+3.x 个性化项目没有映射表或映射缺失时，参考 `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication/pb`。
 
-2.x 个性化项目中，如果本地 `source_code_lib/` 缺失或不完整，再参考 `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/PB2.1.0(build20210918)`。
+2.x 个性化项目没有映射表或映射缺失时，参考 `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/Pb-2.1.1`（老现场版本对应 `PB2.0.0*`/`PB2.1.0*`）。

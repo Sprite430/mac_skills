@@ -1,6 +1,6 @@
 ---
 name: pb-server-developer
-description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x 产品化主线项目和基于产品化代码的地区个性化项目开发。Use only when the target is a PB/PbServer product or personalized project and the task involves JSP/ExtJS pages, MVC page status/column display configuration, new page data loading (loadXXX.do, direct query, bill engine), Controller/Service/DAO APIs, new pages, auto tasks/jobs, system parameters, yml/properties/xml configuration, GAP_MODULE/GAP_MENU/PB_SYS_BUTTON/PB_AUTO_TASK/PB_SYS_PARAM-style SQL, or source_code_lib/product baseline reference. Do not use for unrelated Java/tool projects such as OracleMigrateTool unless the user explicitly says to apply PB development rules.
+description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x 产品化主线项目和基于产品化代码的地区个性化项目开发。Use only when the target is a PB/PbServer product or personalized project and the task involves JSP/ExtJS pages, MVC page status/column display configuration, new page data loading (loadXXX.do, direct query, bill engine), Controller/Service/DAO APIs, new pages, auto tasks/jobs, system parameters, yml/properties/xml configuration, GAP_MODULE/GAP_MENU/PB_SYS_BUTTON/PB_AUTO_TASK/PB_SYS_PARAM-style SQL, or product-baseline source reference (located via the project's CLAUDE.md dependency-to-source mapping). Do not use for unrelated Java/tool projects such as OracleMigrateTool unless the user explicitly says to apply PB development rules.
 ---
 
 # PbServer 开发助手
@@ -11,14 +11,15 @@ description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x �
 
 1. 用户没有明确说“开始编码”“开始编写”“开始修改”或等价直接命令时，不得修改代码。
 2. 编码前必须先做项目适用性判断；非 PB/PbServer 项目不要套用本 skill 的页面、GAP 表、realware、PB 自动任务规则。
-3. 编码前必须完整理解需求、识别场景、查找当前项目已有实现、查找产品化或 `source_code_lib/` 参考实现。
-4. 所有 `source_code_lib/` 目录只读，只能参考，不能修改。
+3. 编码前必须完整理解需求、识别场景、查找当前项目已有实现、按项目 CLAUDE.md 的「产品化依赖 ↔ 源码仓库映射」查找对应版本的产品化源码（映射由 init-pb-dependencies skill 生成和维护；无映射时再查已知产品化基线）。
+4. 映射指向的产品化源码目录只读，只能参考，不能修改。
 5. 2.x/3.x 产品化基线项目默认只读；如果用户明确把产品化主线项目指定为目标项目，可以按产品化开发任务处理。
 6. 对 `.java`、`.js`、`.jsp`、`.yml`、`.properties`、`.xml`、`.sh` 的真实新增/修改代码块，必须使用当前文件类型的注释语法添加成对 AI 标记：
-   - 开始：`@AI-Begin <ID5> <DATE8> @@Claude`
-   - 结束：`@AI-End <ID5> <DATE8> @@Claude`
+   - 开始：`@AI-Begin <ID5> <DATE8> DeepSeek`
+   - 结束：`@AI-End <ID5> <DATE8> DeepSeek`
    - `<ID5>` 是同一文件内不重复的 5 位大写字母/数字组合。
    - `<DATE8>` 是北京时间 `yyyyMMdd`。
+   - 标记签名以全局/项目 CLAUDE.md 的规定为准（当前为 `DeepSeek`）。
 7. 所有新增代码都要有有用注释，解释意图、边界或关键业务逻辑，不写重复表面语义的注释。
 8. 保留用户已有改动，不回滚无关文件。
 
@@ -47,7 +48,10 @@ description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x �
 |---|---:|---|---|
 | 3.x 产品化主线工作区 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication` | 用户明确指定时可作为目标 |
 | 3.x 产品化模块 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/PbServerApplication/pb` | 未指定为目标时默认只参考 |
-| 2.x 产品化基线 | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/PB2.1.0(build20210918)` | 默认只参考 |
+| 3.x 完整工程（只读参考） | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/PB3.5.0(build20260818)/server` | 默认只参考 |
+| 2.x 产品化基线（当前主流） | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/Pb-2.1.1` | 默认只参考 |
+| 2.x 旧版基线 | 2.0/2.1.0 | `/Users/zhangchengke/Documents/ZKJN/code/svn/source/tags/Product/`（PB2.0.0* / PB2.1.0*） | 对应老现场版本时参考 |
+| 产品化源码仓库根 | 2.x/3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/source` | 只读；具体版本按项目 CLAUDE.md 映射表定位 |
 | 四川 3.x 个性化项目 | 3.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/electronic/ProxyBank/ProxyBankV2/customize/sichuan/SiChuanApplication` | 被选中时可修改 |
 | 四川 2.x 个性化项目 | 2.x | `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient_BankCustom/trunk/SiChuan/SiChuan_Server_Maven_Unity` | 被选中时可修改 |
 | 运维迁移工具示例 | 非 PB 工具 | `/Users/zhangchengke/Documents/ZKJN/code/svn/pbclient/trunk/yunwei/OracleMigrateTool` | 默认不使用本 skill |
@@ -59,7 +63,7 @@ description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x �
 3. 按 `references/version-detection.md` 判断 2.x/3.x 和产品化/个性化类型。
 4. 从下面的场景表中选择一个主场景。
 5. 读取 `references/common-rules.md` 和对应场景文件。
-6. 先在目标项目查同类实现，再查 `source_code_lib/` 或匹配版本的产品化基线。
+6. 先在目标项目查同类实现，再按项目 CLAUDE.md 的「产品化依赖 ↔ 源码仓库映射」查对应版本的产品化源码；项目无映射表时再查已知产品化基线。
 7. 总结可能修改的文件和仍不确定的问题；如果用户还没有明确允许编码，停下来请求确认。
 8. 获得允许后，只修改目标项目中与本次需求相关的文件。
 9. 使用最小有效方式验证：编译/测试、定向 grep、SQL 自查或页面加载链路检查。

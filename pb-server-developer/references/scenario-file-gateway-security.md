@@ -32,7 +32,7 @@
 1. 确认接口是否需要登录、是否外部系统调用、是否可经网关访问。
 2. 找同项目已有上传/下载接口，模仿参数名、返回结构、异常处理和文件名编码。
 3. 检查文件路径、文件类型、文件大小、临时目录、清理策略。
-4. 涉及 Controller/Service 修改时，按项目 GitNexus 规则先做 impact。
+4. 涉及 Controller/Service 修改时，项目接入 CodeGraph 的先按 common-rules.md 的 CodeGraph 规则确认影响范围。
 5. 编码前检查 SVN/Git 状态，避免覆盖已有个性化配置。
 
 常用搜索：

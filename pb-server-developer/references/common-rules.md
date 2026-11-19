@@ -3,7 +3,7 @@
 ## 目录
 
 - 必查项
-- GitNexus 与影响面分析
+- CodeGraph 与影响面分析
 - 版本控制和本地改动保护
 - AI 变更标记
 - 产品化/参考代码策略
@@ -20,22 +20,23 @@
 4. 项目类型：产品化主线、产品化参考基线、地区个性化项目。
 5. 场景：已有页面加按钮、页面状态/列配置、页面数据加载、问题定位/修复、SQL/数据库、后端接口、新增页面、自动任务、系统参数、配置文件参数、文件/网关安全。
 6. 当前项目中可模仿的已有实现。
-7. `source_code_lib/` 或已知产品化基线中的产品实现。
+7. 项目 CLAUDE.md「产品化依赖 ↔ 源码仓库映射」表中的产品化源码，或已知产品化基线中的产品实现。
 
 用户给出明确路径时，以用户路径为准，不凭记忆替换目标项目。
 
 如果目标项目是普通工具项目，例如 `OracleMigrateTool`，停止使用 PB 场景规则，改按普通 Java/工具项目处理。
 
 
-## GitNexus 与影响面分析
+## CodeGraph 与影响面分析
 
-如果目标项目的 `AGENTS.md`、`CLAUDE.md` 或项目说明声明已接入 GitNexus，必须优先遵守该项目的 GitNexus 规则：
+目标项目接入 CodeGraph（存在 `.codegraph/` 索引）时，按以下规则使用：
 
-1. 使用 `query`、`context`、`impact`、`detect_changes` 等能力时必须显式传入当前目标项目的 `repo`，禁止省略。
-2. 修改任何函数、类、方法、Controller 接口或共享工具前，先对目标符号执行 upstream impact 分析，并向用户说明直接调用方、受影响流程和风险等级。
-3. impact 返回 HIGH 或 CRITICAL 时，先暂停并告知风险，获得用户确认后再继续编码。
-4. 修改完成后，若项目规则要求或本次修改涉及代码行为，最终总结前执行 `detect_changes` 检查变更影响范围。
-5. GitNexus 是索引工具，不代表项目一定是 Git；SVN 项目也可能有 GitNexus repo，repo 仍按当前项目名显式传入。
+1. 探索代码、查符号源码/调用关系/影响范围优先用 `codegraph_explore`，不要先用 grep/Read 铺开；它返回的源码即 Read 等效。
+2. 修改函数、类、方法、Controller 接口或共享工具前，先对目标符号执行 `codegraph_explore` 确认影响范围（blast radius），并向用户说明直接调用方、受影响流程和风险。
+3. 索引报告 `pendingChanges`/`pendingRefs` 时先向用户报告；获得明确授权后才执行 `codegraph sync`，不要自动全量重建。
+4. 调用方超过 10 个时，先警告风险，再继续修改。
+5. 项目没有 `.codegraph/` 时不得自动初始化，由用户决定是否执行 `codegraph init`。
+6. CodeGraph 只是索引工具，不代表项目一定是 Git；SVN 项目同样适用。
 
 ## 版本控制和本地改动保护
 
@@ -54,26 +55,26 @@
 Java/JavaScript/JSP 脚本示例：
 
 ```java
-// @AI-Begin A1B2C 20260525 Claude
+// @AI-Begin A1B2C 20260525 DeepSeek
 // 说明该业务分支存在的原因。
 doSomething();
-// @AI-End A1B2C 20260525 Claude
+// @AI-End A1B2C 20260525 DeepSeek
 ```
 
 XML/JSP 标签示例：
 
 ```xml
-<!-- @AI-Begin A1B2C 20260525 Claude -->
+<!-- @AI-Begin A1B2C 20260525 DeepSeek -->
 <bean id="exampleService" class="grp.pb.branch.ExampleServiceImpl"/>
-<!-- @AI-End A1B2C 20260525 Claude -->
+<!-- @AI-End A1B2C 20260525 DeepSeek -->
 ```
 
 Properties/YAML/shell 示例：
 
 ```properties
-# @AI-Begin A1B2C 20260525 Claude
+# @AI-Begin A1B2C 20260525 DeepSeek
 example.enabled=true
-# @AI-End A1B2C 20260525 Claude
+# @AI-End A1B2C 20260525 DeepSeek
 ```
 
 规则：
@@ -86,7 +87,7 @@ example.enabled=true
 
 ## 产品化/参考代码策略
 
-- `source_code_lib/` 只读。
+- 映射表指向的产品化源码目录只读（旧方式 `source_code_lib/` 如仍存在也同理）。
 - 已知产品化基线默认只读，除非用户明确要求修改产品化代码。
 - 优先参考产品化行为和命名，再把个性化改动落到地区项目。
 - 如果目标项目已经覆盖了产品化文件，先对比目标项目版本和产品化版本，再决定修改位置。
@@ -101,7 +102,7 @@ example.enabled=true
 - Controller 接口：`rg -n "@RequestMapping|@PostMapping|@GetMapping|ResponseBody|RootController|copySession" .`
 - Service：`rg -n "interface .*Service|ServiceImpl|custom-context|<bean id=.*Service" .`
 - 自动任务：`rg -n "PB_AUTO_TASK|JOB_NAME|execute\\(|Auto.*Task|Quartz|Job" .`
-- 系统参数：`rg -n "sysParam|SysParam|PB_SYS_PARAM|PARAM_CODE|getParam|getSysParam" .`
+- 系统参数：`rg -n "PbParameters|PB_PARAMETER|PB_PARAMETER_VALUES|sysParam|SysParam|PB_SYS_PARAM|PARAM_CODE|getParam|getSysParam" .`
 - 配置参数：`rg -n "Properties|@Value|Environment|getProperty|application.yml|\\.properties" .`
 
 ## 验证方式
