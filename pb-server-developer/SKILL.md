@@ -106,7 +106,7 @@ description: 仅用于 PbServer、国库集中支付、代理银行 PB 2.x/3.x �
 - `references/scenario-backend-api.md`：2.x/3.x Controller、Service、DAO 接口模式。
 - `references/scenario-new-page.md`：JSP、JS、Controller、Service、菜单/模块/状态/按钮 SQL。
 - `references/scenario-auto-task.md`：Job 类和 `PB_AUTO_TASK`。
-- `references/scenario-system-param.md`：数据库系统参数和业务开关。
+- `references/scenario-system-param.md`：数据库系统参数和业务开关（含 PB_PARAMETER/PbParameters 公共/私有判定、父节点树挂组规则、幂等 SQL 骨架）。
 - `references/scenario-config-param.md`：properties/yml/xml 配置参数。
 - `references/templates.md`：常用模板和 SQL 骨架。
 
